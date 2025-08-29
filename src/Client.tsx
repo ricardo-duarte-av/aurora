@@ -1,4 +1,5 @@
 import type React from "react";
+import { useRef } from "react";
 import { useEffect, useState } from "react";
 import "./App.css";
 import type ClientStore from "./ClientStore.tsx";
@@ -25,19 +26,10 @@ interface ClientProps {
 
 export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
     const [clientStore] = useClientStoreContext();
-    const [currentRoomId, setCurrentRoomId] = useState("");
+    const { rls, mls, tls, currentRoomId, setCurrentRoomId } =
+        useStores(clientStore);
 
-    const rls = clientStore.getRoomListStore();
-    useEffect(() => {
-        rls.setActiveRoom(currentRoomId);
-    }, [rls, currentRoomId]);
-
-    const tls = currentRoomId
-        ? clientStore.getTimelineStore(currentRoomId)
-        : undefined;
-    const mls = currentRoomId
-        ? clientStore.getMemberListStore(currentRoomId)
-        : undefined;
+    if (!rls) return;
     console.log(
         `rls: ${rls}, tls: ${tls}, mls: ${mls}, currentRoomId: ${currentRoomId}`,
     );
@@ -89,3 +81,50 @@ export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
         </>
     );
 };
+
+type Stores = {
+    tls?: TimelineStore;
+    rls?: RoomListStore;
+    mls?: MemberListStore;
+};
+
+function useStores(clientStore: ClientStore) {
+    const [currentRoomId, setCurrentRoomId] = useState("");
+    const [stores, setStores] = useState<Stores>({});
+    const refClientStore = useRef<ClientStore>(clientStore);
+
+    useEffect(() => {
+        refClientStore.current = clientStore;
+        setStores({
+            rls: clientStore.getRoomListStore(),
+            tls: undefined,
+            mls: undefined,
+        });
+        setCurrentRoomId("");
+    }, [clientStore]);
+
+    useEffect(() => {
+        const tls = currentRoomId
+            ? refClientStore.current.getTimelineStore(currentRoomId)
+            : undefined;
+        const mls = currentRoomId
+            ? refClientStore.current.getMemberListStore(currentRoomId)
+            : undefined;
+
+        setStores((_stores) => ({
+            rls: _stores.rls,
+            tls,
+            mls,
+        }));
+    }, [currentRoomId]);
+
+    useEffect(() => {
+        stores?.rls?.setActiveRoom(currentRoomId);
+    }, [stores?.rls, currentRoomId]);
+
+    return {
+        currentRoomId,
+        setCurrentRoomId,
+        ...stores,
+    };
+}
