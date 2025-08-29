@@ -15,14 +15,16 @@ import { SidePanelView } from "./SidePanelView.tsx";
 import { SplashView } from "./SplashView.tsx";
 import { Timeline } from "./Timeline.tsx";
 import type TimelineStore from "./TimelineStore.tsx";
+import { useClientStoreContext } from "./context/ClientStoreContext";
 
 console.log("running Client.tsx");
 
 interface ClientProps {
-    clientStore: ClientStore;
+    onAddAccount: () => void;
 }
 
-export const Client: React.FC<ClientProps> = ({ clientStore }) => {
+export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
+    const [clientStore] = useClientStoreContext();
     const [currentRoomId, setCurrentRoomId] = useState("");
 
     const rls = clientStore.getRoomListStore();
@@ -44,7 +46,10 @@ export const Client: React.FC<ClientProps> = ({ clientStore }) => {
             <header className="mx_Header"> </header>
             <section className="mx_Client">
                 <nav className="mx_SidePanel">
-                    <SidePanelView clientStore={clientStore} />
+                    <SidePanelView
+                        clientStore={clientStore}
+                        onAddAccount={onAddAccount}
+                    />
                 </nav>
                 <nav className="mx_RoomList">
                     <RoomSearchView />

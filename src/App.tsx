@@ -1,19 +1,24 @@
 import type React from "react";
 import { type ReactNode, useSyncExternalStore } from "react";
 import "./App.css";
-import type ClientStore from "./ClientStore.tsx";
+import { InlineSpinner } from "@vector-im/compound-web";
+import { Client } from "./Client.tsx";
+import ClientStore from "./ClientStore.tsx";
 import { ClientState } from "./ClientStore.tsx";
 import { Login } from "./Login.tsx";
-import { Client } from "./Client.tsx";
-import { InlineSpinner } from "@vector-im/compound-web";
+import { SessionStore } from "./SessionStore";
+import {
+    ClientStoreContext,
+    useClientStoreContext,
+} from "./context/ClientStoreContext";
+import { useSessionStoreContext } from "./context/SessionStoreContext";
 
 console.log("running App.tsx");
 
-interface AppProps {
-    clientStore: ClientStore;
-}
+const App: React.FC = () => {
+    const [clientStore, setClientStore] = useClientStoreContext();
+    const sessionStore = useSessionStoreContext();
 
-export const App: React.FC<AppProps> = ({ clientStore }) => {
     const clientState = useSyncExternalStore(
         clientStore.subscribe,
         clientStore.getSnapshot,
@@ -31,17 +36,20 @@ export const App: React.FC<AppProps> = ({ clientStore }) => {
             </div>
         );
     } else if (clientState === ClientState.LoggedIn) {
-        component = <Client clientStore={clientStore} />;
+        component = (
+            <Client
+                onAddAccount={() => {
+                    const clientStore = new ClientStore(sessionStore);
+                    clientStore.tryLoadSession();
+                    setClientStore(clientStore);
+                }}
+            />
+        );
     } else if (
         clientState === ClientState.LoggedOut ||
         clientState === ClientState.LoggingIn
     ) {
-        component = (
-            <Login
-                clientStore={clientStore}
-                loggingIn={clientState === ClientState.LoggingIn}
-            />
-        );
+        component = <Login loggingIn={clientState === ClientState.LoggingIn} />;
     }
 
     return <div className="mx_App cpd-theme-dark">{component}</div>;

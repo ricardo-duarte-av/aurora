@@ -1,3 +1,4 @@
+import { cli } from "@tauri-apps/api";
 import {
     Form,
     Glass,
@@ -7,16 +8,20 @@ import {
 import type React from "react";
 import { useState } from "react";
 import ClientStore from "./ClientStore";
+import { useClientStoreContext } from "./context/ClientStoreContext";
+import { useClientStoresContext } from "./context/ClientStoresContext";
+import { useSessionStoreContext } from "./context/SessionStoreContext";
 
 export interface LoginProps {
-    clientStore: ClientStore;
     loggingIn: boolean;
 }
 
-export const Login: React.FC<LoginProps> = ({ clientStore, loggingIn }) => {
+export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [server, setServer] = useState("matrix.org");
+    const [clientStore, setClientStore] = useClientStoreContext();
+    const [, addClientStore] = useClientStoresContext();
 
     return (
         <div className="mx_LoginPage">
@@ -26,13 +31,18 @@ export const Login: React.FC<LoginProps> = ({ clientStore, loggingIn }) => {
                         <TooltipProvider>
                             <Form.Root
                                 style={{ padding: "var(--cpd-space-5x)" }}
-                                onSubmit={(e) => {
+                                onSubmit={async (e) => {
                                     e.preventDefault();
-                                    clientStore.login({
+                                    await clientStore.login({
                                         username,
                                         password,
                                         server: `https://${server}`,
                                     });
+                                    setClientStore(clientStore);
+                                    addClientStore(
+                                        clientStore.client?.userId()!,
+                                        clientStore,
+                                    );
                                 }}
                             >
                                 <Form.Field name="username">
