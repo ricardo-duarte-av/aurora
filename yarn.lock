@@ -1061,15 +1061,15 @@
   resolved "https://registry.npmjs.org/@types/scheduler/-/scheduler-0.16.8.tgz"
   integrity sha512-WZLiwShhwLRmeV6zH+GkbOFT6Z6VklCItrDioxUnv+u4Ll+8vKeFySoFyK/0ctcRpOmwAicELfmys1sDc/Rw+A==
 
-"@vector-im/compound-design-tokens@^4.0.3":
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/@vector-im/compound-design-tokens/-/compound-design-tokens-4.0.3.tgz#77b62680004740ec23498876f460dff266e2eaa7"
-  integrity sha512-txEcsAQEB1d7GaCGwQEcxqwoj81s50Z7Qv91xX+ZjAyvef0pUGW/cd+7dwCPjzVnoBJ2JL1zezrAqrRaG6BXbw==
+"@vector-im/compound-design-tokens@^6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@vector-im/compound-design-tokens/-/compound-design-tokens-6.0.0.tgz#a07975ee46307fc31c2ec64a216b6be2b3b27fb3"
+  integrity sha512-Jk0NsLPCvdcuZi6an1cfyf4MDcIuoPlvja5ZWgJcORyGQZV1eLMHPYKShq9gj+EYk/BXZoPvQ1d6/T+/LSCNPA==
 
-"@vector-im/compound-web@^7.12.0":
-  version "7.12.0"
-  resolved "https://registry.yarnpkg.com/@vector-im/compound-web/-/compound-web-7.12.0.tgz#873b169bd58673f5799a0db8506d263cfcb4babf"
-  integrity sha512-eGsJhouuBJKnh53yOfcakithgFUzaviDR9dWnIs3ULMK97D+XkXe82M/ULg+dFwbTxHKcnIfy3V7H1pcEjFVcQ==
+"@vector-im/compound-web@^8.2.1":
+  version "8.2.1"
+  resolved "https://registry.yarnpkg.com/@vector-im/compound-web/-/compound-web-8.2.1.tgz#e16ce566c836e6c0fa3318128e57fda0a4542514"
+  integrity sha512-mqIMbBtnY3RvpCOVBhE8YouSGwU/efllJR3q4Ds1/Z/rS0/dh3Mok2frG4zRg8wdDa91VI9XHBEjeugUrpRbzw==
   dependencies:
     "@floating-ui/react" "^0.27.0"
     "@radix-ui/react-context-menu" "^2.2.1"
