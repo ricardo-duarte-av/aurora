@@ -34,7 +34,7 @@ export function Stores({ children }: PropsWithChildren) {
         const load = async () => {
             const sessions = sessionStore.load();
             console.log("Loaded sessions", sessions);
-            if (!sessions?.length) {
+            if (!sessions || Object.keys(sessions).length === 0) {
                 const store = new ClientStore(sessionStore);
                 await store.tryLoadSession();
                 setActiveClientStore(store);
