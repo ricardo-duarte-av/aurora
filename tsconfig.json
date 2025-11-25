@@ -18,8 +18,12 @@
         "strict": true,
         // "noUnusedLocals": true,
         // "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+
+        /* Skip type checking for problematic third-party packages */
+        "skipDefaultLibCheck": true
     },
-    "include": ["src"],
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
+    "exclude": ["node_modules/**/*", "dist", "src/generated/**/*"],
     "references": [{ "path": "./tsconfig.node.json" }]
 }
