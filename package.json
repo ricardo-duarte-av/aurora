@@ -10,7 +10,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "typecheck": "tsc --noEmit",
+        "lint:types": "tsc --noEmit",
         "preview": "vite preview",
         "tauri": "tauri",
         "ubrn:web:build:release": "ubrn build web --config ubrn.config.yaml --release",
@@ -30,7 +30,7 @@
         "react-dom": "^19.0.0",
         "react-virtuoso": "^4.12.8",
         "sanitize-html": "^2.12.1",
-        "uniffi-bindgen-react-native": "git+https://github.com/jhugman/uniffi-bindgen-react-native#ad1e3351459f6acce95d403742999fac1b343e64"
+        "uniffi-bindgen-react-native": "git+https://github.com/jhugman/uniffi-bindgen-react-native#5c01f3f7025d069aac1dd1fd51ca72bb76fdb243"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",

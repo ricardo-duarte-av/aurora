@@ -4,8 +4,8 @@ import {
     MessageType,
     type RoomInterface,
     type TaskHandleInterface,
-    TimelineChange,
-    type TimelineDiffInterface,
+    type TimelineDiff,
+    TimelineDiff_Tags,
     type TimelineInterface,
     TimelineItemContent,
     type TimelineItemInterface,
@@ -146,6 +146,49 @@ class TimelineStore extends StateStore<TimelineViewState> {
         throw new Error("Something unknown");
     }
 
+    private logTimelineUpdate(update: TimelineDiff): void {
+        const tagName = TimelineDiff_Tags[update.tag];
+        let updateData: unknown;
+
+        switch (update.tag) {
+            case TimelineDiff_Tags.Set:
+                updateData = [
+                    update.inner.index,
+                    this.parseItem(update.inner.value),
+                ];
+                break;
+            case TimelineDiff_Tags.PushBack:
+            case TimelineDiff_Tags.PushFront:
+                updateData = this.parseItem(update.inner.value);
+                break;
+            case TimelineDiff_Tags.Insert:
+                updateData = [
+                    update.inner.index,
+                    this.parseItem(update.inner.value),
+                ];
+                break;
+            case TimelineDiff_Tags.Remove:
+                updateData = update.inner.index;
+                break;
+            case TimelineDiff_Tags.Truncate:
+                updateData = update.inner.length;
+                break;
+            case TimelineDiff_Tags.Reset:
+            case TimelineDiff_Tags.Append:
+                updateData = update.inner.values.map(this.parseItem);
+                break;
+            case TimelineDiff_Tags.Clear:
+            case TimelineDiff_Tags.PopFront:
+            case TimelineDiff_Tags.PopBack:
+                updateData = "";
+                break;
+            default:
+                updateData = "unknown";
+        }
+
+        console.log("@@ timelineStoreUpdate", tagName, updateData);
+    }
+
     sendMessage = async (msg: string) => {
         try {
             const timeline = await this.timelinePromise;
@@ -184,90 +227,64 @@ class TimelineStore extends StateStore<TimelineViewState> {
         console.log("onPaginationStatusUpdate", status);
     };
 
-    onUpdate = (updates: TimelineDiffInterface[]): void => {
+    onUpdate = (diff: Array<TimelineDiff>): void => {
         let newItems = [...this.viewState.items];
 
-        for (const update of updates) {
-            console.log(
-                "@@ timelineStoreUpdate",
-                TimelineChange[update.change()],
-                update.change() == TimelineChange.Set
-                    ? [update.set()!.index, this.parseItem(update.set()?.item)]
-                    : update.change() == TimelineChange.PushBack
-                      ? this.parseItem(update.pushBack())
-                      : update.change() == TimelineChange.PushFront
-                        ? this.parseItem(update.pushFront())
-                        : update.change() == TimelineChange.Clear
-                          ? ""
-                          : update.change() == TimelineChange.PopFront
-                            ? ""
-                            : update.change() == TimelineChange.PopBack
-                              ? ""
-                              : update.change() == TimelineChange.Insert
-                                ? [
-                                      update.insert()!.index,
-                                      this.parseItem(update.insert()?.item),
-                                  ]
-                                : update.change() == TimelineChange.Remove
-                                  ? update.remove()
-                                  : update.change() == TimelineChange.Truncate
-                                    ? update.truncate()
-                                    : update.change() == TimelineChange.Reset
-                                      ? update.reset()!.map(this.parseItem)
-                                      : update.change() == TimelineChange.Append
-                                        ? update.append()!.map(this.parseItem)
-                                        : "unknown",
-            );
-            switch (update.change()) {
-                case TimelineChange.Set: {
-                    newItems[update.set()!.index] = this.parseItem(
-                        update.set()?.item,
+        for (const update of diff) {
+            this.logTimelineUpdate(update);
+            switch (update.tag) {
+                case TimelineDiff_Tags.Set: {
+                    newItems[update.inner.index] = this.parseItem(
+                        update.inner.value,
                     );
                     newItems = [...newItems];
                     break;
                 }
-                case TimelineChange.PushBack:
-                    newItems = [...newItems, this.parseItem(update.pushBack())];
-                    break;
-                case TimelineChange.PushFront:
+                case TimelineDiff_Tags.PushBack:
                     newItems = [
-                        this.parseItem(update.pushFront()),
+                        ...newItems,
+                        this.parseItem(update.inner.value),
+                    ];
+                    break;
+                case TimelineDiff_Tags.PushFront:
+                    newItems = [
+                        this.parseItem(update.inner.value),
                         ...newItems,
                     ];
                     break;
-                case TimelineChange.Clear:
+                case TimelineDiff_Tags.Clear:
                     newItems = [];
                     break;
-                case TimelineChange.PopFront:
+                case TimelineDiff_Tags.PopFront:
                     newItems.shift();
                     newItems = [...newItems];
                     break;
-                case TimelineChange.PopBack:
+                case TimelineDiff_Tags.PopBack:
                     newItems.pop();
                     newItems = [...newItems];
                     break;
-                case TimelineChange.Insert:
+                case TimelineDiff_Tags.Insert:
                     newItems.splice(
-                        update.insert()!.index,
+                        update.inner.index,
                         0,
-                        this.parseItem(update.insert()?.item),
+                        this.parseItem(update.inner.value),
                     );
                     newItems = [...newItems];
                     break;
-                case TimelineChange.Remove:
-                    newItems.splice(update.remove()!, 1);
+                case TimelineDiff_Tags.Remove:
+                    newItems.splice(update.inner.index, 1);
                     newItems = [...newItems];
                     break;
-                case TimelineChange.Truncate:
-                    newItems = newItems.slice(0, update.truncate()!);
+                case TimelineDiff_Tags.Truncate:
+                    newItems = newItems.slice(0, update.inner.length);
                     break;
-                case TimelineChange.Reset:
-                    newItems = [...update.reset()!.map(this.parseItem)];
+                case TimelineDiff_Tags.Reset:
+                    newItems = [...update.inner.values.map(this.parseItem)];
                     break;
-                case TimelineChange.Append:
+                case TimelineDiff_Tags.Append:
                     newItems = [
                         ...newItems,
-                        ...update.append()!.map(this.parseItem),
+                        ...update.inner.values.map(this.parseItem),
                     ];
                     break;
             }

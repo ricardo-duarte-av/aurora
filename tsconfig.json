@@ -18,12 +18,14 @@
         "strict": true,
         // "noUnusedLocals": true,
         // "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true,
-
-        /* Skip type checking for problematic third-party packages */
-        "skipDefaultLibCheck": true
+        "noFallthroughCasesInSwitch": true
     },
     "include": ["src/**/*.ts", "src/**/*.tsx"],
-    "exclude": ["node_modules/**/*", "dist", "src/generated/**/*"],
+    "exclude": [
+        "node_modules/**/*",
+        "node_modules/uniffi-bindgen-react-native/**/*",
+        "dist",
+        "src/generated/**/*"
+    ],
     "references": [{ "path": "./tsconfig.node.json" }]
 }
