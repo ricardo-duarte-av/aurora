@@ -47,4 +47,13 @@ export const FILTERS = {
             ],
         }),
     },
+    [RoomListEntriesDynamicFilterKind_Tags.LowPriority]: {
+        name: "Low Priority",
+        method: new RoomListEntriesDynamicFilterKind.All({
+            filters: [
+                new RoomListEntriesDynamicFilterKind.LowPriority(),
+                new RoomListEntriesDynamicFilterKind.DeduplicateVersions(),
+            ],
+        }),
+    },
 };

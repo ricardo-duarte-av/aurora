@@ -20,6 +20,12 @@
         // "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src"],
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
+    "exclude": [
+        "node_modules/**/*",
+        "node_modules/uniffi-bindgen-react-native/**/*",
+        "dist",
+        "src/generated/**/*"
+    ],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

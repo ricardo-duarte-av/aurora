@@ -1,0 +1,12 @@
+diff --git a/bindings/wasm/Cargo.toml b/bindings/wasm/Cargo.toml
+index 0000000..1111111 100644
+--- a/bindings/wasm/Cargo.toml
++++ b/bindings/wasm/Cargo.toml
+@@ -11,7 +11,7 @@ default = []
+
+ [dependencies]
+-matrix-sdk-ffi = { path = "../matrix-sdk-ffi", features = ["native-tls", "js", "indexeddb", "unstable-msc4274", "experimental-element-recent-emojis"] }
++matrix-sdk-ffi = { path = "../matrix-sdk-ffi", default-features = false, features = ["native-tls", "js", "indexeddb", "unstable-msc4274", "experimental-element-recent-emojis"] }
+ # We want to ensure that the version of wasm-bindgen is selected by the
+ # uniffi-runtime-javascript crate.
+ # cargo is smart enough to do this if we don't put any further restrictions
