@@ -1,8 +1,15 @@
+name: Aurora Deploy
 on:
-  pull_request: {}
+  push:
+    branches: ["main"]
+  workflow_dispatch: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   netlify:
-    name: Deploy preview to Netlify
+    name: Deploy to Netlify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -12,18 +19,14 @@ jobs:
           node-version: "lts/*"
       - run: yarn install --frozen-lockfile
       - run: yarn build
-      - uses: nwtgck/actions-netlify@v3.0
+      - uses: nwtgck/actions-netlify@4cbaf4c08f1a7bfa537d6113472ef4424e4eb654 # v3.0.0
         with:
-          publish-dir: './dist'
+          publish-dir: "./dist"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Deploy from GitHub Actions"
           enable-pull-request-comment: false
           enable-commit-comment: false
-          production-deploy: false
-          github-deployment-environment: Netlify
-          github-deployment-description: Preview build
-          alias: deploy-preview-${{ github.event.number }}
+          alias: "aurora"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
-        timeout-minutes: 1
