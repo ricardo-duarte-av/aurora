@@ -8,17 +8,17 @@
  */
 
 import { createContext, useContext } from "react";
-import type ClientStore from "../ClientStore";
+import type { ClientViewModel } from "../viewmodel/ClientViewModel";
 
 /**
- * A mapping of user IDs to their respective ClientStore instances.
+ * A mapping of user IDs to their respective ClientViewModel instances.
  */
-export type ClientStores = Record<string, ClientStore>;
+export type ClientStores = Record<string, ClientViewModel>;
 type ContextType = [
     ClientStores,
-    // To add a new ClientStore
-    (userId: string, store: ClientStore) => void,
-    // To remove a ClientStore
+    // To add a new ClientViewModel
+    (userId: string, store: ClientViewModel) => void,
+    // To remove a ClientViewModel
     (userId: string) => void,
 ];
 

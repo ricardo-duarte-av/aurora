@@ -15,7 +15,6 @@ import {
     useMemo,
     useState,
 } from "react";
-import ClientStore from "./ClientStore";
 import { SessionStore } from "./SessionStore";
 import { ClientStoreContext } from "./context/ClientStoreContext";
 import {
@@ -23,11 +22,13 @@ import {
     ClientStoresContext,
 } from "./context/ClientStoresContext";
 import { SessionStoreContext } from "./context/SessionStoreContext";
+import { ClientViewModel } from "./viewmodel/ClientViewModel";
 
 export function Stores({ children }: PropsWithChildren) {
     const [clientStores, setClientStores] = useState<ClientStores>({});
 
-    const [activeClientStore, setActiveClientStore] = useState<ClientStore>();
+    const [activeClientViewModel, setActiveClientViewModel] =
+        useState<ClientViewModel>();
     const sessionStore = useMemo(() => new SessionStore(), []);
 
     useEffect(() => {
@@ -35,37 +36,43 @@ export function Stores({ children }: PropsWithChildren) {
             const sessions = sessionStore.load();
             console.log("Loaded sessions", sessions);
             if (!sessions || Object.keys(sessions).length === 0) {
-                const store = new ClientStore(sessionStore);
-                await store.tryLoadSession();
-                setActiveClientStore(store);
+                const viewModel = new ClientViewModel({ sessionStore });
+                await viewModel.tryLoadSession();
+                setActiveClientViewModel(viewModel);
                 return;
             }
 
             const stores: ClientStores = {};
             for (const session of Object.values(sessions)) {
-                const store = new ClientStore(sessionStore, session.userId);
-                await store.tryLoadSession();
-                stores[session.userId] = store;
+                const viewModel = new ClientViewModel({
+                    sessionStore,
+                    userIdForLoading: session.userId,
+                });
+                await viewModel.tryLoadSession();
+                stores[session.userId] = viewModel;
             }
 
             console.log("Loaded stores", stores);
 
             setClientStores(stores);
-            setActiveClientStore(stores[Object.keys(stores)[0]]); // Select the first store as active
+            setActiveClientViewModel(stores[Object.keys(stores)[0]]); // Select the first store as active
         };
 
         load();
     }, [sessionStore]);
 
-    const addClientStore = useCallback((userId: string, store: ClientStore) => {
-        setClientStores((prev) => ({ ...prev, [userId]: store }));
-    }, []);
+    const addClientStore = useCallback(
+        (userId: string, viewModel: ClientViewModel) => {
+            setClientStores((prev) => ({ ...prev, [userId]: viewModel }));
+        },
+        [],
+    );
 
     const removeClientStore = useCallback((userId: string) => {
         setClientStores((prev) => omit(prev, userId));
     }, []);
 
-    if (!activeClientStore) return;
+    if (!activeClientViewModel) return;
 
     return (
         <SessionStoreContext.Provider value={sessionStore}>
@@ -73,7 +80,7 @@ export function Stores({ children }: PropsWithChildren) {
                 value={[clientStores, addClientStore, removeClientStore]}
             >
                 <ClientStoreContext.Provider
-                    value={[activeClientStore, setActiveClientStore]}
+                    value={[activeClientViewModel, setActiveClientViewModel]}
                 >
                     {children}
                 </ClientStoreContext.Provider>

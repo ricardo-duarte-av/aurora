@@ -1,4 +1,3 @@
-import { cli } from "@tauri-apps/api";
 import {
     Form,
     Glass,
@@ -7,10 +6,8 @@ import {
 } from "@vector-im/compound-web";
 import type React from "react";
 import { useState } from "react";
-import ClientStore from "./ClientStore";
 import { useClientStoreContext } from "./context/ClientStoreContext";
 import { useClientStoresContext } from "./context/ClientStoresContext";
-import { useSessionStoreContext } from "./context/SessionStoreContext";
 
 export interface LoginProps {
     loggingIn: boolean;
@@ -20,7 +17,7 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [server, setServer] = useState("matrix.org");
-    const [clientStore, setClientStore] = useClientStoreContext();
+    const [clientViewModel] = useClientStoreContext();
     const [, addClientStore] = useClientStoresContext();
 
     return (
@@ -33,16 +30,18 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
                                 style={{ padding: "var(--cpd-space-5x)" }}
                                 onSubmit={async (e) => {
                                     e.preventDefault();
-                                    await clientStore.login({
+                                    await clientViewModel.login({
                                         username,
                                         password,
                                         server: `https://${server}`,
                                     });
-                                    setClientStore(clientStore);
-                                    addClientStore(
-                                        clientStore.client?.userId()!,
-                                        clientStore,
-                                    );
+                                    // After login completes, get userId from snapshot
+                                    const userId = clientViewModel.getSnapshot().userId;
+                                    console.log("Login completed, userId:", userId);
+                                    if (userId) {
+                                        console.log("Adding client store for userId:", userId);
+                                        addClientStore(userId, clientViewModel);
+                                    }
                                 }}
                             >
                                 <Form.Field name="username">

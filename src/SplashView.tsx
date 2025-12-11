@@ -12,7 +12,7 @@ import splash from "./assets/splash.svg";
 export function SplashView(): JSX.Element {
     return (
         <main className="mx_Splash">
-            <img src={ splash } height="380"/>
+            <img src={splash} height="380" />
         </main>
     );
 }

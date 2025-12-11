@@ -6,6 +6,10 @@ import topLevelAwait from "vite-plugin-top-level-await";
 export default defineConfig(async () => ({
     plugins: [react(), topLevelAwait()],
 
+    define: {
+        "process.env": {},
+    },
+
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
     //
     // 1. prevent vite from obscuring rust errors
