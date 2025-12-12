@@ -7,7 +7,6 @@ import {
 import type React from "react";
 import { useState } from "react";
 import { useClientStoreContext } from "./context/ClientStoreContext";
-import { useClientStoresContext } from "./context/ClientStoresContext";
 
 export interface LoginProps {
     loggingIn: boolean;
@@ -18,7 +17,6 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
     const [password, setPassword] = useState("");
     const [server, setServer] = useState("matrix.org");
     const [clientViewModel] = useClientStoreContext();
-    const [, addClientStore] = useClientStoresContext();
 
     return (
         <div className="mx_LoginPage">
@@ -35,13 +33,6 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
                                         password,
                                         server: `https://${server}`,
                                     });
-                                    // After login completes, get userId from snapshot
-                                    const userId = clientViewModel.getSnapshot().userId;
-                                    console.log("Login completed, userId:", userId);
-                                    if (userId) {
-                                        console.log("Adding client store for userId:", userId);
-                                        addClientStore(userId, clientViewModel);
-                                    }
                                 }}
                             >
                                 <Form.Field name="username">

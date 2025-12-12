@@ -11,6 +11,7 @@ import type { MemberListStore } from "../MemberList/MemberListStore";
 import type { SessionStore } from "../SessionStore";
 import type TimelineStore from "../TimelineStore";
 import type { ClientInterface } from "../index.web";
+import type { ClientViewModel } from "./ClientViewModel";
 import type { RoomListViewModel } from "./RoomListViewModel";
 
 export enum ClientState {
@@ -34,6 +35,7 @@ export interface LoginParams {
 export interface Props {
     sessionStore: SessionStore;
     userIdForLoading?: string;
+    onLogin?: (userId: string, clientViewModel: ClientViewModel) => void;
 }
 
 /**

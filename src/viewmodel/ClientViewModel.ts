@@ -209,6 +209,11 @@ export class ClientViewModel
                 displayName,
                 avatarUrl,
             });
+
+            // Notify parent that login completed
+            if (this.props.onLogin && userId) {
+                this.props.onLogin(userId, this);
+            }
         } catch (e) {
             printRustError("login failed", e);
             this.snapshot.merge({ clientState: ClientState.Unknown });

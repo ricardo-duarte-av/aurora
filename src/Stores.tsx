@@ -31,12 +31,22 @@ export function Stores({ children }: PropsWithChildren) {
         useState<ClientViewModel>();
     const sessionStore = useMemo(() => new SessionStore(), []);
 
+    const addClientStore = useCallback(
+        (userId: string, viewModel: ClientViewModel) => {
+            setClientStores((prev) => ({ ...prev, [userId]: viewModel }));
+        },
+        [],
+    );
+
     useEffect(() => {
         const load = async () => {
             const sessions = sessionStore.load();
             console.log("Loaded sessions", sessions);
             if (!sessions || Object.keys(sessions).length === 0) {
-                const viewModel = new ClientViewModel({ sessionStore });
+                const viewModel = new ClientViewModel({ 
+                    sessionStore,
+                    onLogin: addClientStore,
+                });
                 await viewModel.tryLoadSession();
                 setActiveClientViewModel(viewModel);
                 return;
@@ -47,6 +57,7 @@ export function Stores({ children }: PropsWithChildren) {
                 const viewModel = new ClientViewModel({
                     sessionStore,
                     userIdForLoading: session.userId,
+                    onLogin: addClientStore,
                 });
                 await viewModel.tryLoadSession();
                 stores[session.userId] = viewModel;
@@ -59,14 +70,7 @@ export function Stores({ children }: PropsWithChildren) {
         };
 
         load();
-    }, [sessionStore]);
-
-    const addClientStore = useCallback(
-        (userId: string, viewModel: ClientViewModel) => {
-            setClientStores((prev) => ({ ...prev, [userId]: viewModel }));
-        },
-        [],
-    );
+    }, [sessionStore, addClientStore]);
 
     const removeClientStore = useCallback((userId: string) => {
         setClientStores((prev) => omit(prev, userId));
