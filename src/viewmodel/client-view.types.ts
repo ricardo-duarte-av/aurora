@@ -17,6 +17,7 @@ import type {
 } from "../index.web";
 import type { ClientViewModel } from "./ClientViewModel";
 import type { LoginViewModel } from "./LoginViewModel";
+import type { RoomListViewModel } from "./RoomListViewModel";
 
 // Re-export OIDC types for convenience
 export type {
@@ -63,6 +64,9 @@ export interface ClientViewSnapshot {
 
     /** ViewModel for the login form */
     loginViewModel?: LoginViewModel;
+
+    /** ViewModel for the list of all rooms */
+    roomListViewModel?: RoomListViewModel;
 
     /** Store for the current room's member list (will become ViewModel in future) */
     memberListStore?: MemberListStore;

@@ -15,13 +15,14 @@ import React, {
     useEffect,
     useState,
 } from "react";
-import type ClientStore from "./ClientStore";
+import { useViewModel } from "@element-hq/web-shared-components";
 import BaseAvatar from "./MemberList/BaseAvatar";
 import { useClientStoreContext } from "./context/ClientStoreContext";
 
 import { Button, Menu, Separator } from "@vector-im/compound-web";
 import styles from "./UserMenu.module.css";
 import { useClientStoresContext } from "./context/ClientStoresContext";
+import type { ClientViewModel } from "./viewmodel/ClientViewModel";
 
 function mxcToUrl(mxcUrl: string): string {
     return `${mxcUrl.replace(
@@ -36,14 +37,13 @@ interface UserMenuProps {
 
 export function UserMenu({ onAddAccount }: UserMenuProps): JSX.Element {
     const [clientStores, , removeClientStore] = useClientStoresContext();
-    const [clientStore, setClientStore] = useClientStoreContext();
-    const avatarUrl = useAvatarUrl(clientStore);
+    const [clientViewModel, setClientViewModel] = useClientStoreContext();
+    const { userId, displayName, avatarUrl } = useViewModel(clientViewModel);
     const [open, setOpen] = useState(false);
-    const displayName = useDisplayName(clientStore);
 
     const hasMultipleAccounts = Object.keys(clientStores).length > 1;
     const otherAccounts = Object.keys(clientStores).filter(
-        (id) => id !== clientStore.client?.userId(),
+        (id) => id !== userId,
     );
 
     return (
@@ -60,10 +60,10 @@ export function UserMenu({ onAddAccount }: UserMenuProps): JSX.Element {
                 >
                     <BaseAvatar
                         size="32px"
-                        name={clientStore.client?.userId()}
-                        idName={clientStore.client?.userId()}
-                        title={clientStore.client?.userId()}
-                        url={avatarUrl}
+                        name={userId}
+                        idName={userId}
+                        title={userId}
+                        url={avatarUrl ? mxcToUrl(avatarUrl) : undefined}
                         altText={"User"}
                     />
                 </button>
@@ -73,10 +73,10 @@ export function UserMenu({ onAddAccount }: UserMenuProps): JSX.Element {
                 <div className={styles.top}>
                     <BaseAvatar
                         size="88px"
-                        name={clientStore.client?.userId()}
-                        idName={clientStore.client?.userId()}
-                        title={clientStore.client?.userId()}
-                        url={avatarUrl}
+                        name={userId}
+                        idName={userId}
+                        title={userId}
+                        url={avatarUrl ? mxcToUrl(avatarUrl) : undefined}
                         altText={"User"}
                     />
                     <div className={styles.names}>
@@ -86,9 +86,7 @@ export function UserMenu({ onAddAccount }: UserMenuProps): JSX.Element {
                             </span>
                         </div>
                         <div>
-                            <span className={styles.userId}>
-                                {clientStore.client?.userId()}
-                            </span>
+                            <span className={styles.userId}>{userId}</span>
                         </div>
                     </div>
                 </div>
@@ -102,14 +100,16 @@ export function UserMenu({ onAddAccount }: UserMenuProps): JSX.Element {
                         Icon={SignOutIcon}
                         kind="tertiary"
                         onClick={() => {
-                            removeClientStore(clientStore.client?.userId()!);
+                            if (userId) {
+                                removeClientStore(userId);
+                            }
 
                             // change to another account if there is one
                             if (hasMultipleAccounts) {
                                 const firstAccount = otherAccounts[0];
-                                setClientStore(clientStores[firstAccount]);
+                                setClientViewModel(clientStores[firstAccount]);
                             }
-                            clientStore.logout();
+                            clientViewModel.logout();
                             setOpen(false);
                         }}
                     >
@@ -121,14 +121,13 @@ export function UserMenu({ onAddAccount }: UserMenuProps): JSX.Element {
                         <Separator className={styles.separator} />
                         <ul className={styles.list}>
                             {otherAccounts.map((id) => {
-                                const store = clientStores[id];
-                                const userId = store.client?.userId();
+                                const viewModel = clientStores[id];
                                 return (
-                                    <li key={userId}>
+                                    <li key={id}>
                                         <Account
-                                            clientStore={store}
+                                            clientViewModel={viewModel}
                                             onClick={() => {
-                                                setClientStore(store);
+                                                setClientViewModel(viewModel);
                                                 setOpen(false);
                                             }}
                                         />
@@ -152,55 +151,27 @@ export function UserMenu({ onAddAccount }: UserMenuProps): JSX.Element {
     );
 }
 
-function useAvatarUrl(clientStore: ClientStore): string | undefined {
-    const [avatarUrl, setAvatarUrl] = useState<string>();
-
-    useEffect(() => {
-        clientStore.client?.avatarUrl()?.then((avatarUrl) => {
-            avatarUrl
-                ? setAvatarUrl(mxcToUrl(avatarUrl))
-                : setAvatarUrl(undefined);
-        });
-    }, [clientStore]);
-
-    return avatarUrl;
-}
-
-function useDisplayName(clientStore: ClientStore): string | undefined {
-    const [name, setName] = useState<string>();
-    useEffect(() => {
-        const load = async () =>
-            setName(await clientStore.client?.displayName());
-        load();
-    }, [clientStore]);
-
-    return name;
-}
-
 type AccountProps = {
-    clientStore: ClientStore;
+    clientViewModel: ClientViewModel;
     onClick: MouseEventHandler;
 };
 
-function Account({ clientStore, onClick }: AccountProps): JSX.Element {
-    const avatarUrl = useAvatarUrl(clientStore);
-    const displayName = useDisplayName(clientStore);
+function Account({ clientViewModel, onClick }: AccountProps): JSX.Element {
+    const { userId, displayName, avatarUrl } = useViewModel(clientViewModel);
 
     return (
         <button className={styles.account} type="button" onClick={onClick}>
             <BaseAvatar
                 className={styles.account_avatar}
                 size="32px"
-                name={clientStore.client?.userId()}
-                idName={clientStore.client?.userId()}
-                title={clientStore.client?.userId()}
-                url={avatarUrl}
+                name={userId}
+                idName={userId}
+                title={userId}
+                url={avatarUrl ? mxcToUrl(avatarUrl) : undefined}
                 altText={"User"}
             />
             <span className={styles.account_userName}>{displayName}</span>
-            <span className={styles.account_userId}>
-                {clientStore.client?.userId()}
-            </span>
+            <span className={styles.account_userId}>{userId}</span>
         </button>
     );
 }

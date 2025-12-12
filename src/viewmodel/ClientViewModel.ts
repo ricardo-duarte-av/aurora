@@ -32,6 +32,7 @@ import {
     type Props,
 } from "./client-view.types";
 import { LoginViewModel } from "./LoginViewModel";
+import { RoomListViewModel } from "./RoomListViewModel";
 
 export class ClientViewModel
     extends BaseViewModel<ClientViewSnapshot, Props>
@@ -46,6 +47,7 @@ export class ClientViewModel
             clientState: ClientState.Unknown,
             client: undefined,
             timelineStore: undefined,
+            roomListViewModel: undefined,
             loginViewModel: undefined,
             memberListStore: undefined,
             userId: undefined,
@@ -176,6 +178,7 @@ export class ClientViewModel
             clientState: ClientState.LoggedOut,
             client: undefined,
             timelineStore: undefined,
+            roomListViewModel: undefined,
             memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
@@ -408,9 +411,17 @@ export class ClientViewModel
                 .finish();
             this.roomListService = this.syncService.roomListService();
 
+            // Initialize room list view model now that sync services are ready
+            const roomListViewModel = new RoomListViewModel({
+                syncServiceInterface: this.syncService,
+                roomListService: this.roomListService,
+            });
+            roomListViewModel.run();
+
             console.log("Sync services created, transitioning to Syncing");
             this.snapshot.merge({
                 clientState: ClientState.Syncing,
+                roomListViewModel,
             });
             await this.syncService.start();
             console.log("syncing...");

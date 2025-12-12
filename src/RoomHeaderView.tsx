@@ -10,10 +10,11 @@ import "./TimelineStore";
 import { Avatar } from "@vector-im/compound-web";
 import type React from "react";
 import { useMemo, useSyncExternalStore } from "react";
-import type RoomListStore from "./RoomListStore.tsx";
+import { useViewModel } from "@element-hq/web-shared-components";
+import type { RoomListViewModel } from "./viewmodel/RoomListViewModel";
 
 type RoomHeaderViewProps = {
-    roomListStore: RoomListStore;
+    vm: RoomListViewModel;
     currentRoomId: string;
 };
 
@@ -25,15 +26,12 @@ function mxcToUrl(mxcUrl: string): string {
 }
 
 export const RoomHeaderView: React.FC<RoomHeaderViewProps> = ({
-    roomListStore,
+    vm,
     currentRoomId,
 }) => {
-    const { rooms } = useSyncExternalStore(
-        roomListStore.subscribe,
-        roomListStore.getSnapshot,
-    );
+    const { rooms } = useViewModel(vm);
     const room = useMemo(
-        () => rooms.find((room) => room.roomId === currentRoomId),
+        () => rooms.find((room) => room.getSnapshot().roomId === currentRoomId),
         [currentRoomId, rooms],
     );
 
@@ -47,14 +45,18 @@ export const RoomHeaderView: React.FC<RoomHeaderViewProps> = ({
             <div className="mx_RoomHeader_avatar">
                 <Avatar
                     id={currentRoomId}
-                    name={roomInfo?.displayName || ""}
+                    name={roomInfo?.info?.displayName || ""}
                     src={
-                        roomInfo?.avatarUrl ? mxcToUrl(roomInfo.avatarUrl) : ""
+                        roomInfo?.info?.avatarUrl
+                            ? mxcToUrl(roomInfo.info.avatarUrl)
+                            : ""
                     }
                     size="40px"
                 />
             </div>
-            <div className="mx_RoomHeader_name">{room?.getName()}</div>
+            <div className="mx_RoomHeader_name">
+                {roomInfo?.info?.displayName?.trim() || ""}
+            </div>
         </div>
     );
 };
