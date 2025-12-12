@@ -184,6 +184,8 @@ export class ClientViewModel
             displayName: undefined,
             avatarUrl: undefined,
             currentRoomId: undefined,
+            // Keep loginViewModel so we can log in again
+            loginViewModel: this.getSnapshot().loginViewModel,
         });
     }
 
@@ -458,5 +460,4 @@ export class ClientViewModel
             currentRoomId: roomId,
         });
     }
-
 }

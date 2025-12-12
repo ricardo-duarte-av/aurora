@@ -30,6 +30,9 @@ export class LoginViewModel
             supportsOidc: null,
             supportsPassword: null,
         });
+
+        // Automatically check capabilities for default server
+        this.checkHomeserverAndContinue();
     }
 
     public setUsername(username: string): void {
@@ -180,7 +183,9 @@ export class LoginViewModel
             console.error("OIDC login error:", e);
             this.snapshot.merge({
                 error:
-                    e instanceof Error ? e.message : "Failed to start OIDC login",
+                    e instanceof Error
+                        ? e.message
+                        : "Failed to start OIDC login",
             });
         }
     }

@@ -46,14 +46,18 @@ const App: React.FC = () => {
         component = (
             <Client
                 onAddAccount={() => {
-                    console.log("Add Account clicked - creating new ClientViewModel");
+                    console.log(
+                        "Add Account clicked - creating new ClientViewModel",
+                    );
                     const newClientViewModel = new ClientViewModel({
                         sessionStore,
                         onLogin: addClientStore,
                     });
                     console.log("Setting new ClientViewModel as active");
                     setClientViewModel(newClientViewModel);
-                    console.log("Calling tryLoadSession (should transition to LoggedOut)");
+                    console.log(
+                        "Calling tryLoadSession (should transition to LoggedOut)",
+                    );
                     newClientViewModel.tryLoadSession();
                 }}
             />
@@ -71,4 +75,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

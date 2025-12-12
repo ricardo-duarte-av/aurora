@@ -43,7 +43,7 @@ export function Stores({ children }: PropsWithChildren) {
             const sessions = sessionStore.load();
             console.log("Loaded sessions", sessions);
             if (!sessions || Object.keys(sessions).length === 0) {
-                const viewModel = new ClientViewModel({ 
+                const viewModel = new ClientViewModel({
                     sessionStore,
                     onLogin: addClientStore,
                 });
