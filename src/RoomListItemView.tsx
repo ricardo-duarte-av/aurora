@@ -7,32 +7,21 @@
 
 import classNames from "classnames";
 import type React from "react";
-import { type JSX, memo, useSyncExternalStore } from "react";
+import { type JSX, memo } from "react";
 import "./RoomListItemView.css";
 
 import { Avatar } from "@vector-im/compound-web";
 import { NotificationDecoration } from "./NotificationDecoration";
-import type { RoomListItem } from "./RoomListStore";
-import {
-    Membership,
-    MsgLikeKind,
-    TimelineItemContent,
-} from "./generated/matrix_sdk_ffi.ts";
+import type { RoomListItemViewModel } from "./viewmodel/RoomListItemViewModel";
 import { Flex } from "./utils/Flex";
-
-function mxcToUrl(mxcUrl: string): string {
-    return `${mxcUrl.replace(
-        /^mxc:\/\//,
-        "https://matrix.org/_matrix/media/v3/thumbnail/",
-    )}?width=48&height=48`;
-}
+import { useViewModel } from "@element-hq/web-shared-components";
 
 interface RoomListItemViewProps
     extends React.HTMLAttributes<HTMLButtonElement> {
     /**
      * The room to display
      */
-    room: RoomListItem;
+    room: RoomListItemViewModel;
     /**
      * Whether the room is selected
      */
@@ -47,13 +36,21 @@ export const RoomListItemView = memo(function RoomListItemView({
     isSelected,
     ...props
 }: RoomListItemViewProps): JSX.Element {
-    const vm = useRoomListItemViewModel(room);
+    const {
+        name,
+        avatar,
+        messagePreview,
+        showNotificationDecoration,
+        notificationState,
+        hasParticipantInCall,
+        isBold,
+    } = useViewModel(room);
 
     return (
         <button
             className={classNames("mx_RoomListItemView", {
                 mx_RoomListItemView_selected: isSelected,
-                mx_RoomListItemView_bold: vm.isBold,
+                mx_RoomListItemView_bold: isBold,
             })}
             type="button"
             aria-selected={isSelected}
@@ -66,9 +63,9 @@ export const RoomListItemView = memo(function RoomListItemView({
                 align="center"
             >
                 <Avatar
-                    id={room.roomId}
-                    name={vm.name}
-                    src={vm.avatar}
+                    id={room.getSnapshot().roomId}
+                    name={name}
+                    src={avatar}
                     size="26px"
                 />
                 <Flex
@@ -81,21 +78,21 @@ export const RoomListItemView = memo(function RoomListItemView({
                     <div className="mx_RoomListItemView_text">
                         <div
                             className="mx_RoomListItemView_roomName"
-                            title={vm.name}
+                            title={name}
                         >
-                            {vm.name}
+                            {name}
                         </div>
                         <div className="mx_RoomListItemView_messagePreview">
-                            {vm.messagePreview}
+                            {messagePreview}
                         </div>
                     </div>
                     <>
                         {/* aria-hidden because we summarise the unread count/notification status in a11yLabel variable */}
-                        {vm.showNotificationDecoration && (
+                        {showNotificationDecoration && (
                             <NotificationDecoration
-                                notificationState={vm.notificationState}
+                                notificationState={notificationState}
                                 aria-hidden={true}
-                                hasVideoCall={vm.hasParticipantInCall}
+                                hasVideoCall={hasParticipantInCall}
                             />
                         )}
                     </>
@@ -104,37 +101,3 @@ export const RoomListItemView = memo(function RoomListItemView({
         </button>
     );
 });
-
-function useRoomListItemViewModel(room: RoomListItem) {
-    const info = useSyncExternalStore(room.subscribe, room.getSnapshot);
-    const isNotification = Number(info?.numUnreadMessages) > 0;
-    const invited = info?.membership === Membership.Invited;
-
-    const notificationState = {
-        isMention: Number(info?.numUnreadMentions) > 0,
-        isNotification,
-        isActivityNotification:
-            Number(info?.numUnreadNotifications) > 0 && !isNotification,
-        hasAnyNotificationOrActivity:
-            Number(info?.numUnreadNotifications) > 0 || invited,
-        invited,
-    };
-    const avatar = room.getAvatar();
-    return {
-        name: room.getName() || "placeholder name",
-        avatar: avatar ? mxcToUrl(avatar) : undefined,
-        showNotificationDecoration:
-            notificationState.hasAnyNotificationOrActivity,
-        notificationState,
-        hasParticipantInCall: room.hasVideoCall(),
-        messagePreview:
-            room.latestEvent &&
-            TimelineItemContent.MsgLike.instanceOf(room.latestEvent.content) &&
-            MsgLikeKind.Message.instanceOf(
-                room.latestEvent.content.inner.content.kind,
-            )
-                ? room.latestEvent.content.inner.content.kind.inner.content.body
-                : undefined,
-        isBold: notificationState.hasAnyNotificationOrActivity,
-    };
-}

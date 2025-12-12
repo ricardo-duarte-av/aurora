@@ -13,11 +13,11 @@ import {
     createContext,
     useContext,
 } from "react";
-import type ClientStore from "../ClientStore";
+import type { ClientViewModel } from "../viewmodel/ClientViewModel";
 
 type ContextType = [
-    ClientStore,
-    Dispatch<SetStateAction<ClientStore | undefined>>,
+    ClientViewModel,
+    Dispatch<SetStateAction<ClientViewModel | undefined>>,
 ];
 
 export const ClientStoreContext = createContext<ContextType>(

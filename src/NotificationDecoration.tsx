@@ -14,8 +14,16 @@ import { Unread, UnreadCounter } from "@vector-im/compound-web";
 import type { HTMLProps, JSX } from "react";
 import "./NotificationDecoration.css";
 
-import type { NotificationState } from "./RoomListStore";
 import { Flex } from "./utils/Flex";
+
+export interface NotificationState {
+    hasAnyNotificationOrActivity: boolean;
+    invited: boolean;
+    isMention: boolean;
+    isActivityNotification: boolean;
+    isNotification: boolean;
+}
+
 interface NotificationDecorationProps extends HTMLProps<HTMLDivElement> {
     /**
      * The notification state of the room or thread.

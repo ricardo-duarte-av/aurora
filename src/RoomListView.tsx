@@ -7,13 +7,14 @@
 
 import "./RoomListView.css";
 import { InlineSpinner } from "@vector-im/compound-web";
-import { type JSX, useCallback, useSyncExternalStore } from "react";
+import { type JSX, useCallback } from "react";
 import { Virtuoso } from "react-virtuoso";
+import { useViewModel } from "@element-hq/web-shared-components";
 import { RoomListItemView } from "./RoomListItemView";
-import type RoomListStore from "./RoomListStore";
+import type { RoomListViewModel } from "./viewmodel/RoomListViewModel";
 
 type RoomListViewProps = {
-    vm: RoomListStore;
+    vm: RoomListViewModel;
     onRoomSelected: (roomId: string) => void;
     currentRoomId: string;
 };
@@ -26,10 +27,10 @@ export function RoomListView({
     onRoomSelected,
     currentRoomId,
 }: RoomListViewProps): JSX.Element {
-    const { rooms, numRooms } = useSyncExternalStore(
-        vm.subscribe,
-        vm.getSnapshot,
-    );
+    const { rooms, canLoadMore } = useViewModel(vm);
+
+    // Show spinner if we're in the "All" filter AND can load more rooms
+    const showFooter = vm.isAllFilter() && canLoadMore;
 
     // The first div is needed to make the virtualized list take all the remaining space and scroll correctly
     return (
@@ -38,24 +39,21 @@ export function RoomListView({
                 data={rooms}
                 endReached={vm.loadMore}
                 increaseViewportBy={200}
-                totalCount={numRooms >= 0 ? numRooms : undefined}
                 fixedItemHeight={48}
                 context={{ currentRoomId, onRoomSelected }}
                 rangeChanged={vm.rangeChanged}
                 itemContent={(_, room, { currentRoomId, onRoomSelected }) => {
+                    const roomId = room.getSnapshot().roomId;
                     return (
                         <RoomListItemView
                             room={room}
-                            isSelected={currentRoomId === room.roomId}
-                            onClick={() => onRoomSelected(room.roomId)}
+                            isSelected={currentRoomId === roomId}
+                            onClick={() => onRoomSelected(roomId)}
                         />
                     );
                 }}
                 components={{
-                    Footer:
-                        vm.isAllFilter() && numRooms > rooms.length
-                            ? Footer
-                            : undefined,
+                    Footer: showFooter ? Footer : undefined,
                 }}
             />
         </div>

@@ -6,25 +6,24 @@
  */
 
 import { ChatFilter } from "@vector-im/compound-web";
-import React, { type JSX, useSyncExternalStore } from "react";
+import type { JSX } from "react";
+import { useViewModel } from "@element-hq/web-shared-components";
 import "./RoomListFiltersView.css";
 
-import { FILTERS, type SupportedFilters } from "./Filter";
-import type RoomListStore from "./RoomListStore";
-import { RoomListEntriesDynamicFilterKind_Tags } from "./generated/matrix_sdk_ffi";
+import type { RoomListViewModel } from "./viewmodel/RoomListViewModel";
 import { Flex } from "./utils/Flex";
 
 interface RoomListFiltersViewProps {
-    store: RoomListStore;
+    vm: RoomListViewModel;
 }
 
 /**
  * The primary filters for the room list
  */
 export function RoomListFiltersView({
-    store,
+    vm,
 }: RoomListFiltersViewProps): JSX.Element {
-    const vm = useRoomListViewModel(store);
+    const { filters } = useViewModel(vm);
 
     return (
         <Flex
@@ -35,7 +34,7 @@ export function RoomListFiltersView({
             gap="var(--cpd-space-2x)"
             wrap="wrap"
         >
-            {vm.filters.map((filter) => (
+            {filters.map((filter) => (
                 <li
                     role="option"
                     aria-selected={filter.active}
@@ -43,7 +42,7 @@ export function RoomListFiltersView({
                 >
                     <ChatFilter
                         selected={filter.active}
-                        onClick={filter.toggle}
+                        onClick={() => vm.toggleFilter(filter.key)}
                     >
                         {filter.name}
                     </ChatFilter>
@@ -51,23 +50,4 @@ export function RoomListFiltersView({
             ))}
         </Flex>
     );
-}
-
-function useRoomListViewModel(store: RoomListStore) {
-    const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
-
-    return {
-        filters: Object.entries(FILTERS)
-            .filter(
-                ([key]) =>
-                    key !== RoomListEntriesDynamicFilterKind_Tags.NonLeft,
-            )
-            .map(([key, value]) => {
-                return {
-                    active: key === state?.filter,
-                    name: value.name,
-                    toggle: () => store.toggleFilter(key as SupportedFilters),
-                };
-            }),
-    };
 }
