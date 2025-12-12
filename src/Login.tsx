@@ -1,27 +1,20 @@
-import { cli } from "@tauri-apps/api";
 import {
     Form,
     Glass,
     InlineSpinner,
     TooltipProvider,
 } from "@vector-im/compound-web";
+import { useViewModel } from "@element-hq/web-shared-components";
 import type React from "react";
-import { useState } from "react";
-import ClientStore from "./ClientStore";
-import { useClientStoreContext } from "./context/ClientStoreContext";
-import { useClientStoresContext } from "./context/ClientStoresContext";
-import { useSessionStoreContext } from "./context/SessionStoreContext";
+import type { LoginViewModel } from "./viewmodel/LoginViewModel";
 
 export interface LoginProps {
-    loggingIn: boolean;
+    loginViewModel: LoginViewModel;
 }
 
-export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [server, setServer] = useState("matrix.org");
-    const [clientStore, setClientStore] = useClientStoreContext();
-    const [, addClientStore] = useClientStoresContext();
+export const Login: React.FC<LoginProps> = ({ loginViewModel }) => {
+    const { username, password, server, canSubmit, loggingIn } =
+        useViewModel(loginViewModel);
 
     return (
         <div className="mx_LoginPage">
@@ -33,16 +26,7 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
                                 style={{ padding: "var(--cpd-space-5x)" }}
                                 onSubmit={async (e) => {
                                     e.preventDefault();
-                                    await clientStore.login({
-                                        username,
-                                        password,
-                                        server: `https://${server}`,
-                                    });
-                                    setClientStore(clientStore);
-                                    addClientStore(
-                                        clientStore.client?.userId()!,
-                                        clientStore,
-                                    );
+                                    await loginViewModel.login();
                                 }}
                             >
                                 <Form.Field name="username">
@@ -51,7 +35,9 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
                                         disabled={loggingIn}
                                         value={username}
                                         onChange={(e) =>
-                                            setUsername(e.target.value)
+                                            loginViewModel.setUsername(
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                 </Form.Field>
@@ -62,7 +48,9 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
                                         disabled={loggingIn}
                                         value={password}
                                         onChange={(e) =>
-                                            setPassword(e.target.value)
+                                            loginViewModel.setPassword(
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                 </Form.Field>
@@ -73,14 +61,14 @@ export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
                                         disabled={loggingIn}
                                         value={server}
                                         onChange={(e) =>
-                                            setServer(e.target.value)
+                                            loginViewModel.setServer(
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                 </Form.Field>
 
-                                <Form.Submit
-                                    disabled={!username || !password || !server}
-                                >
+                                <Form.Submit disabled={!canSubmit}>
                                     {loggingIn ? <InlineSpinner /> : "Login"}
                                 </Form.Submit>
                             </Form.Root>
