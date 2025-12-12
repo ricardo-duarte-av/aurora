@@ -8,10 +8,10 @@
  */
 
 import type { MemberListStore } from "../MemberList/MemberListStore";
-import type RoomListStore from "../RoomListStore";
 import type { SessionStore } from "../SessionStore";
 import type TimelineStore from "../TimelineStore";
 import type { ClientInterface } from "../index.web";
+import type { RoomListViewModel } from "./RoomListViewModel";
 
 export enum ClientState {
     Unknown = 0,
@@ -49,8 +49,8 @@ export interface ClientViewSnapshot {
     /** Store for the current room's timeline (will become ViewModel in future) */
     timelineStore?: TimelineStore;
 
-    /** Store for the list of all rooms (will become ViewModel in future) */
-    roomListStore?: RoomListStore;
+    /** ViewModel for the list of all rooms */
+    roomListViewModel?: RoomListViewModel;
 
     /** Store for the current room's member list (will become ViewModel in future) */
     memberListStore?: MemberListStore;
@@ -91,9 +91,4 @@ export interface ClientViewActions {
      * Set the current room and initialize its timeline/member stores
      */
     setCurrentRoom(roomId: string): void;
-
-    /**
-     * Initialize the room list store
-     */
-    initializeRoomListStore(): void;
 }

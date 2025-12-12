@@ -22,30 +22,25 @@ interface ClientProps {
 
 export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
     const [clientViewModel] = useClientStoreContext();
-    const { roomListStore, timelineStore, memberListStore, currentRoomId } =
+    const { roomListViewModel, timelineStore, memberListStore, currentRoomId } =
         useViewModel(clientViewModel);
-
-    // Initialize room list store on mount
-    useEffect(() => {
-        clientViewModel.initializeRoomListStore();
-    }, [clientViewModel]);
 
     // Handle room changes
     const handleRoomSelected = (roomId: string) => {
         clientViewModel.setCurrentRoom(roomId);
     };
 
-    // Update active room in room list store
+    // Update active room in room list view model
     useEffect(() => {
-        if (roomListStore && currentRoomId) {
-            roomListStore.setActiveRoom(currentRoomId);
+        if (roomListViewModel && currentRoomId) {
+            roomListViewModel.setActiveRoom(currentRoomId);
         }
-    }, [roomListStore, currentRoomId]);
+    }, [roomListViewModel, currentRoomId]);
 
-    if (!roomListStore) return null;
+    if (!roomListViewModel) return null;
 
     console.log(
-        `roomListStore: ${roomListStore}, timelineStore: ${timelineStore}, memberListStore: ${memberListStore}, currentRoomId: ${currentRoomId}`,
+        `roomListViewModel: ${roomListViewModel}, timelineStore: ${timelineStore}, memberListStore: ${memberListStore}, currentRoomId: ${currentRoomId}`,
     );
 
     return (
@@ -63,9 +58,9 @@ export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
                     {
                         <>
                             <RoomListHeaderView />
-                            <RoomListFiltersView store={roomListStore} />
+                            <RoomListFiltersView vm={roomListViewModel} />
                             <RoomListView
-                                vm={roomListStore}
+                                vm={roomListViewModel}
                                 currentRoomId={currentRoomId ?? ""}
                                 onRoomSelected={handleRoomSelected}
                             />
@@ -76,7 +71,7 @@ export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
                     <>
                         <main className="mx_MainPanel">
                             <RoomHeaderView
-                                roomListStore={roomListStore}
+                                vm={roomListViewModel}
                                 currentRoomId={currentRoomId ?? ""}
                             />
                             <Timeline

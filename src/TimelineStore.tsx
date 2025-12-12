@@ -185,8 +185,6 @@ class TimelineStore extends StateStore<TimelineViewState> {
             default:
                 updateData = "unknown";
         }
-
-        console.log("@@ timelineStoreUpdate", tagName, updateData);
     }
 
     sendMessage = async (msg: string) => {
@@ -200,16 +198,13 @@ class TimelineStore extends StateStore<TimelineViewState> {
                     },
                 }),
             )!;
-            console.log("sending", msg);
             await timeline.send(event);
-            console.log("sent", msg);
         } catch (e) {
             printRustError("Failed to send message", e);
         }
     };
 
     backPaginate = async (): Promise<void> => {
-        console.log("backPaginate");
         const timeline = await this.timelinePromise;
         const hasMore = !(await timeline.paginateBackwards(50));
         const shouldEmit = this.hasMoreItems !== hasMore;
@@ -224,7 +219,6 @@ class TimelineStore extends StateStore<TimelineViewState> {
 
     onPaginationStatusUpdate = async (status: RoomPaginationStatus) => {
         this.paginationStatus = status;
-        console.log("onPaginationStatusUpdate", status);
     };
 
     onUpdate = (diff: Array<TimelineDiff>): void => {
@@ -345,23 +339,19 @@ class TimelineStore extends StateStore<TimelineViewState> {
         if (!this.room) return;
 
         (async () => {
-            console.log("subscribing to timeline", this.room.id());
             const timeline = await this.room.timeline();
             this.timelineListener = await timeline.addListener(this);
             this.pagintationListener =
                 await timeline.subscribeToBackPaginationStatus({
                     onUpdate: this.onPaginationStatusUpdate,
                 });
-            console.log("subscribed to timeline", this.room.id());
             this.running = true;
         })();
     };
     stop = () => {
         (async () => {
-            console.log("unsubscribing to timeline", this.room.id());
             this.timelineListener?.cancel();
             this.running = false;
-            console.log("unsubscribed to timeline", this.room.id());
         })();
     };
 }

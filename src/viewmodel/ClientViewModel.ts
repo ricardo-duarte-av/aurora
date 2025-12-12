@@ -9,7 +9,6 @@
 
 import { BaseViewModel } from "@element-hq/web-shared-components";
 import { MemberListStore } from "../MemberList/MemberListStore";
-import RoomListStore from "../RoomListStore";
 import TimelineStore from "../TimelineStore";
 import {
     ClientBuilder,
@@ -28,6 +27,7 @@ import {
     type LoginParams,
     type Props,
 } from "./client-view.types";
+import { RoomListViewModel } from "./RoomListViewModel";
 
 export class ClientViewModel
     extends BaseViewModel<ClientViewSnapshot, Props>
@@ -41,7 +41,7 @@ export class ClientViewModel
             clientState: ClientState.Unknown,
             client: undefined,
             timelineStore: undefined,
-            roomListStore: undefined,
+            roomListViewModel: undefined,
             memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
@@ -161,7 +161,7 @@ export class ClientViewModel
             clientState: ClientState.LoggedOut,
             client: undefined,
             timelineStore: undefined,
-            roomListStore: undefined,
+            roomListViewModel: undefined,
             memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
@@ -233,8 +233,19 @@ export class ClientViewModel
                 .withOfflineMode()
                 .finish();
             this.roomListService = this.syncService.roomListService();
+
+            // Initialize room list view model now that sync services are ready
+            const roomListViewModel = new RoomListViewModel({
+                syncServiceInterface: this.syncService,
+                roomListService: this.roomListService,
+            });
+            roomListViewModel.run();
+
             console.log("Sync services created, transitioning to Syncing");
-            this.snapshot.merge({ clientState: ClientState.Syncing });
+            this.snapshot.merge({
+                clientState: ClientState.Syncing,
+                roomListViewModel,
+            });
             await this.syncService.start();
             console.log("syncing...");
         } catch (e) {
@@ -271,20 +282,4 @@ export class ClientViewModel
         });
     }
 
-    public initializeRoomListStore(): void {
-        if (this.getSnapshot().roomListStore) return;
-
-        if (!this.syncService || !this.roomListService) {
-            console.error("Cannot initialize room list without sync service");
-            return;
-        }
-
-        const roomListStore = new RoomListStore(
-            this.syncService,
-            this.roomListService,
-        );
-        roomListStore.run();
-
-        this.snapshot.merge({ roomListStore });
-    }
 }
