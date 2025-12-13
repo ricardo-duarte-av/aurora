@@ -58,11 +58,6 @@ export interface RoomListViewSnapshot {
  */
 export interface RoomListViewActions {
     /**
-     * Start the room list subscription
-     */
-    run(): void;
-
-    /**
      * Set the active room for subscription
      */
     setActiveRoom(roomId: string): void;

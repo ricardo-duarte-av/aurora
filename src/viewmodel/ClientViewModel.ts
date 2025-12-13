@@ -8,8 +8,8 @@
  */
 
 import { BaseViewModel } from "@element-hq/web-shared-components";
-import { MemberListStore } from "../MemberList/MemberListStore";
-import TimelineStore from "../TimelineStore";
+import { MemberListViewModel } from "./MemberListViewModel";
+import { TimelineViewModel } from "./TimelineViewModel";
 import {
     ClientBuilder,
     type ClientInterface,
@@ -418,7 +418,6 @@ export class ClientViewModel
                 syncServiceInterface: this.syncService,
                 roomListService: this.roomListService,
             });
-            roomListViewModel.run();
 
             console.log("Sync services created, transitioning to Syncing");
             this.snapshot.merge({
@@ -437,22 +436,26 @@ export class ClientViewModel
     public setCurrentRoom(roomId: string): void {
         if (roomId === "") return;
 
-        const currentTimeline = this.getSnapshot().timelineStore;
-        if (currentTimeline?.room.id() === roomId) return;
+        const snapshot = this.getSnapshot();
+        const currentTimeline = snapshot.timelineStore;
 
-        currentTimeline?.stop();
+        // Check if we're already viewing this room
+        if (snapshot.currentRoomId === roomId) {
+            return;
+        }
 
-        const client = this.getSnapshot().client;
+        // Dispose the current timeline and member list
+        currentTimeline?.dispose();
+        snapshot.memberListStore?.dispose();
+
+        const client = snapshot.client;
         if (!client) return;
 
         const room = client.getRoom(roomId);
         if (!room) return;
 
-        const timelineStore = new TimelineStore(room);
-        timelineStore.run();
-
-        const memberListStore = new MemberListStore(roomId, client);
-        memberListStore.run();
+        const timelineStore = new TimelineViewModel({ room });
+        const memberListStore = new MemberListViewModel({ roomId, client });
 
         this.snapshot.merge({
             timelineStore,

@@ -7,14 +7,14 @@
  *
  */
 
-import type { MemberListStore } from "../MemberList/MemberListStore";
+import type { MemberListViewModel } from "./MemberListViewModel";
 import type { SessionStore } from "../SessionStore";
-import type TimelineStore from "../TimelineStore";
 import type {
     ClientInterface,
     HomeserverLoginDetailsInterface,
     OAuthAuthorizationDataInterface,
 } from "../index.web";
+import type { TimelineViewModel } from "./TimelineViewModel";
 import type { ClientViewModel } from "./ClientViewModel";
 import type { LoginViewModel } from "./LoginViewModel";
 import type { RoomListViewModel } from "./RoomListViewModel";
@@ -59,8 +59,8 @@ export interface ClientViewSnapshot {
     /** Matrix SDK client instance */
     client?: ClientInterface;
 
-    /** Store for the current room's timeline (will become ViewModel in future) */
-    timelineStore?: TimelineStore;
+    /** ViewModel for the current room's timeline */
+    timelineStore?: TimelineViewModel;
 
     /** ViewModel for the login form */
     loginViewModel?: LoginViewModel;
@@ -68,8 +68,8 @@ export interface ClientViewSnapshot {
     /** ViewModel for the list of all rooms */
     roomListViewModel?: RoomListViewModel;
 
-    /** Store for the current room's member list (will become ViewModel in future) */
-    memberListStore?: MemberListStore;
+    /** ViewModel for the current room's member list */
+    memberListStore?: MemberListViewModel;
 
     /** Current user ID */
     userId?: string;

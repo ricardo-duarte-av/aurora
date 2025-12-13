@@ -1,8 +1,17 @@
+/*
+ *
+ *  * Copyright 2025 New Vector Ltd.
+ *  *
+ *  * SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
+ *  * Please see LICENSE files in the repository root for full details.
+ *
+ */
+
+import { BaseViewModel } from "@element-hq/web-shared-components";
 import {
     EventOrTransactionId,
     type EventTimelineItem,
     MessageType,
-    type RoomInterface,
     type TaskHandleInterface,
     type TimelineDiff,
     TimelineDiff_Tags,
@@ -10,16 +19,14 @@ import {
     TimelineItemContent,
     type TimelineItemInterface,
     VirtualTimelineItem,
-} from "./generated/matrix_sdk_ffi.ts";
-import type { RoomPaginationStatus } from "./index.web.ts";
-import { StateStore } from "./StateStore.tsx";
-import { printRustError } from "./utils.ts";
-
-interface TimelineViewState {
-    items: TimelineItem<any>[];
-    showTopSpinner: boolean;
-    firstItemIndex: number;
-}
+} from "../generated/matrix_sdk_ffi.ts";
+import type { RoomPaginationStatus } from "../index.web.ts";
+import { printRustError } from "../utils.ts";
+import type {
+    Props,
+    TimelineViewActions,
+    TimelineViewSnapshot,
+} from "./timeline-view.types";
 
 export enum TimelineItemKind {
     Event = 0,
@@ -120,20 +127,27 @@ export class RealEventTimelineItem extends TimelineItem<TimelineItemKind.Event> 
 }
 
 const INITIAL_FIRST_TIME_INDEX = 10000;
-class TimelineStore extends StateStore<TimelineViewState> {
-    running = false;
-    paginationStatus?: RoomPaginationStatus;
-    firstItemId?: string;
-    hasMoreItems = true;
-    private timelinePromise: Promise<TimelineInterface>;
 
-    constructor(public readonly room: RoomInterface) {
-        super({
+export class TimelineViewModel
+    extends BaseViewModel<TimelineViewSnapshot, Props>
+    implements TimelineViewActions
+{
+    private running = false;
+    private paginationStatus?: RoomPaginationStatus;
+    private firstItemId?: string;
+    private hasMoreItems = true;
+    private timelinePromise: Promise<TimelineInterface>;
+    private timelineListener?: TaskHandleInterface;
+    private paginationListener?: TaskHandleInterface;
+
+    public constructor(props: Props) {
+        super(props, {
             items: [],
             showTopSpinner: true,
             firstItemIndex: INITIAL_FIRST_TIME_INDEX,
         });
-        this.timelinePromise = this.room.timeline();
+        this.timelinePromise = this.props.room.timeline();
+        this.run();
     }
 
     private parseItem(item?: TimelineItemInterface): TimelineItem<any> {
@@ -187,7 +201,7 @@ class TimelineStore extends StateStore<TimelineViewState> {
         }
     }
 
-    sendMessage = async (msg: string) => {
+    public sendMessage = async (msg: string): Promise<void> => {
         try {
             const timeline = await this.timelinePromise;
             const event = timeline.createMessageContent(
@@ -204,25 +218,27 @@ class TimelineStore extends StateStore<TimelineViewState> {
         }
     };
 
-    backPaginate = async (): Promise<void> => {
+    public backPaginate = async (): Promise<void> => {
         const timeline = await this.timelinePromise;
         const hasMore = !(await timeline.paginateBackwards(50));
         const shouldEmit = this.hasMoreItems !== hasMore;
         this.hasMoreItems = hasMore;
         if (shouldEmit) {
-            this.setState({
-                ...this.viewState,
+            this.snapshot.merge({
                 showTopSpinner: hasMore,
             });
         }
     };
 
-    onPaginationStatusUpdate = async (status: RoomPaginationStatus) => {
+    private onPaginationStatusUpdate = async (
+        status: RoomPaginationStatus,
+    ): Promise<void> => {
         this.paginationStatus = status;
     };
 
-    onUpdate = (diff: Array<TimelineDiff>): void => {
-        let newItems = [...this.viewState.items];
+    public onUpdate = (diff: Array<TimelineDiff>): void => {
+        const snapshot = this.getSnapshot();
+        let newItems = [...snapshot.items];
 
         for (const update of diff) {
             this.logTimelineUpdate(update);
@@ -326,34 +342,30 @@ class TimelineStore extends StateStore<TimelineViewState> {
             this.firstItemId = findFirstEventItemId(newItems);
         }
 
-        this.setState({
-            ...this.viewState,
+        this.snapshot.merge({
             items: newItems,
             firstItemIndex,
         });
     };
 
-    timelineListener?: TaskHandleInterface;
-    pagintationListener?: TaskHandleInterface;
-    run = () => {
-        if (!this.room) return;
+    private run = (): void => {
+        if (this.running) return;
 
         (async () => {
-            const timeline = await this.room.timeline();
+            const timeline = await this.props.room.timeline();
             this.timelineListener = await timeline.addListener(this);
-            this.pagintationListener =
+            this.paginationListener =
                 await timeline.subscribeToBackPaginationStatus({
                     onUpdate: this.onPaginationStatusUpdate,
                 });
             this.running = true;
         })();
-    };
-    stop = () => {
-        (async () => {
+
+        // Cleanup listeners when the ViewModel is disposed
+        this.disposables.track(() => {
             this.timelineListener?.cancel();
+            this.paginationListener?.cancel();
             this.running = false;
-        })();
+        });
     };
 }
-
-export default TimelineStore;
