@@ -48,10 +48,10 @@ export class MemberListViewModel
         this.run();
     }
 
-    private async run(): Promise<void> {
+    private async run(searchQuery?: string): Promise<void> {
         console.log("Running member list store", this.props.roomId);
         const { joined: joinedSdk, invited: invitedSdk } =
-            await this.loadMemberList(undefined);
+            await this.loadMemberList(searchQuery);
 
         console.log("members", joinedSdk, invitedSdk);
         const newMemberMap = new Map<string, MemberWithSeparator>();
