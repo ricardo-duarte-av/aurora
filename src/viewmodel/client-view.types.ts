@@ -9,7 +9,7 @@
 
 import type { MemberListStore } from "../MemberList/MemberListStore";
 import type { SessionStore } from "../SessionStore";
-import type TimelineStore from "../TimelineStore";
+import type { TimelineViewModel } from "./TimelineViewModel";
 import type { ClientInterface } from "../index.web";
 import type { ClientViewModel } from "./ClientViewModel";
 import type { RoomListViewModel } from "./RoomListViewModel";
@@ -48,8 +48,8 @@ export interface ClientViewSnapshot {
     /** Matrix SDK client instance */
     client?: ClientInterface;
 
-    /** Store for the current room's timeline (will become ViewModel in future) */
-    timelineStore?: TimelineStore;
+    /** ViewModel for the current room's timeline */
+    timelineStore?: TimelineViewModel;
 
     /** ViewModel for the list of all rooms */
     roomListViewModel?: RoomListViewModel;

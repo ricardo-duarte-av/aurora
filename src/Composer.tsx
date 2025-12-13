@@ -1,9 +1,9 @@
 import type React from "react";
 import { useState } from "react";
-import TimelineStore from "./TimelineStore";
+import type { TimelineViewModel } from "./viewmodel/TimelineViewModel";
 
 export interface ComposerProps {
-    timelineStore: TimelineStore;
+    timelineStore: TimelineViewModel;
 }
 
 export const Composer: React.FC<ComposerProps> = ({ timelineStore }) => {

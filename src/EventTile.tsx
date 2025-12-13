@@ -6,7 +6,7 @@ import {
     type TimelineItem,
     type TimelineItemKind,
     isVirtualEvent,
-} from "./TimelineStore";
+} from "./viewmodel/TimelineViewModel";
 import {
     MessageFormat_Tags,
     MessageType,

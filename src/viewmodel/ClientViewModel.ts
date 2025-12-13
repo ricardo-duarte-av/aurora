@@ -9,7 +9,7 @@
 
 import { BaseViewModel } from "@element-hq/web-shared-components";
 import { MemberListStore } from "../MemberList/MemberListStore";
-import TimelineStore from "../TimelineStore";
+import { TimelineViewModel } from "./TimelineViewModel";
 import {
     ClientBuilder,
     type ClientInterface,
@@ -263,18 +263,24 @@ export class ClientViewModel
     public setCurrentRoom(roomId: string): void {
         if (roomId === "") return;
 
-        const currentTimeline = this.getSnapshot().timelineStore;
-        if (currentTimeline?.room.id() === roomId) return;
+        const snapshot = this.getSnapshot();
+        const currentTimeline = snapshot.timelineStore;
 
+        // Check if we're already viewing this room
+        if (currentTimeline && currentTimeline.props.room.id() === roomId) {
+            return;
+        }
+
+        // Stop the current timeline
         currentTimeline?.stop();
 
-        const client = this.getSnapshot().client;
+        const client = snapshot.client;
         if (!client) return;
 
         const room = client.getRoom(roomId);
         if (!room) return;
 
-        const timelineStore = new TimelineStore(room);
+        const timelineStore = new TimelineViewModel({ room });
         timelineStore.run();
 
         const memberListStore = new MemberListStore(roomId, client);
@@ -286,5 +292,4 @@ export class ClientViewModel
             currentRoomId: roomId,
         });
     }
-
 }

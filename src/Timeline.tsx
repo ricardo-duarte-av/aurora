@@ -1,24 +1,25 @@
 import type React from "react";
-import { type ReactNode, useRef, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useRef, useState } from "react";
+import { useViewModel } from "@element-hq/web-shared-components";
 import { EventTile } from "./EventTile";
-import type TimelineStore from "./TimelineStore";
+import {
+    TimelineViewModel,
+    isVirtualEvent,
+    TimelineItem,
+} from "./viewmodel/TimelineViewModel";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { isVirtualEvent, TimelineItem } from "./TimelineStore";
 import { InlineSpinner } from "@vector-im/compound-web";
 
 export interface TimelineProps {
     currentRoomId: string;
-    timelineStore: TimelineStore;
+    timelineStore: TimelineViewModel;
 }
 
 export const Timeline: React.FC<TimelineProps> = ({
     currentRoomId,
     timelineStore: timeline,
 }) => {
-    const viewState = useSyncExternalStore(
-        timeline.subscribe,
-        timeline.getSnapshot,
-    );
+    const viewState = useViewModel(timeline);
     const virtuosoRef = useRef<VirtuosoHandle | null>(null);
     let items = viewState.items;
     if (viewState.showTopSpinner) {

@@ -6,10 +6,10 @@
  */
 
 import "./RoomHeaderView.css";
-import "./TimelineStore";
+import "./viewmodel/TimelineViewModel";
 import { Avatar } from "@vector-im/compound-web";
 import type React from "react";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
 import { useViewModel } from "@element-hq/web-shared-components";
 import type { RoomListViewModel } from "./viewmodel/RoomListViewModel";
 
@@ -35,10 +35,11 @@ export const RoomHeaderView: React.FC<RoomHeaderViewProps> = ({
         [currentRoomId, rooms],
     );
 
-    const roomInfo = useSyncExternalStore(
-        room?.subscribe || (() => () => undefined),
-        room?.getSnapshot || (() => undefined),
-    );
+    if (!room) {
+        return null;
+    }
+
+    const roomInfo = useViewModel(room);
 
     return (
         <div className="mx_RoomHeader">

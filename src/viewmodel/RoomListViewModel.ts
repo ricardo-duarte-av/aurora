@@ -199,7 +199,10 @@ export class RoomListViewModel
             selectedFilter: newFilter,
             filters: RoomListViewModel.computeFilters(newFilter),
         });
-        this.run();
+
+        if (this.controller) {
+            this.controller.setFilter(FILTERS[newFilter].method);
+        }
     };
 
     public isAllFilter = (): boolean => {

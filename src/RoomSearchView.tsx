@@ -6,7 +6,7 @@
  */
 
 import "./RoomSearchView.css";
-import { type JSX, useCallback, useSyncExternalStore } from "react";
+import { type JSX } from "react";
 
 //import OverflowHorizontalIcon from "@vector-im/compound-design-tokens/assets/web/icons/overflow-horizontal";
 import SearchIcon from "@vector-im/compound-design-tokens/assets/web/icons/search";
