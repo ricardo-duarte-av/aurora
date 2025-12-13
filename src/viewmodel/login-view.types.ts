@@ -14,6 +14,18 @@ import type {
 } from "./client-view.types";
 
 /**
+ * Represents the current login flow state
+ */
+export enum LoginFlow {
+    /** User is entering server URL */
+    ServerInput = "ServerInput",
+    /** OIDC login flow */
+    OIDC = "OIDC",
+    /** Username/password login flow */
+    UsernamePassword = "UsernamePassword",
+}
+
+/**
  * Props passed to LoginViewModel constructor
  */
 export interface Props {
@@ -29,12 +41,16 @@ export interface Props {
         callbackUrl: string,
         homeserverUrl: string,
     ) => Promise<void>;
+    onAbortOidcLogin: () => Promise<void>;
 }
 
 /**
  * Snapshot represents the complete state of the login view
  */
 export interface LoginViewSnapshot {
+    /** Current login flow */
+    flow: LoginFlow;
+
     /** Username field value */
     username: string;
 
@@ -90,7 +106,7 @@ export interface LoginViewActions {
     /**
      * Check homeserver capabilities and proceed with appropriate login method
      */
-    checkHomeserverAndContinue(): Promise<void>;
+    checkCapabilitiesAndContinue(): Promise<void>;
 
     /**
      * Initiate OIDC login flow

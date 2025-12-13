@@ -67,6 +67,7 @@ export class ClientViewModel
                 onCheckHomeserver: this.checkHomeserverCapabilities.bind(this),
                 onGetOidcAuthUrl: this.getOidcAuthUrl.bind(this),
                 onLoginWithOidcCallback: this.loginWithOidcCallback.bind(this),
+                onAbortOidcLogin: this.abortOidcLogin.bind(this),
             }),
         });
     }

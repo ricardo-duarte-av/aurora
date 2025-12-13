@@ -8,10 +8,11 @@
  */
 
 import { BaseViewModel } from "@element-hq/web-shared-components";
-import type {
-    LoginViewActions,
-    LoginViewSnapshot,
-    Props,
+import {
+    LoginFlow,
+    type LoginViewActions,
+    type LoginViewSnapshot,
+    type Props,
 } from "./login-view.types";
 
 export class LoginViewModel
@@ -20,6 +21,7 @@ export class LoginViewModel
 {
     public constructor(props: Props) {
         super(props, {
+            flow: LoginFlow.OIDC,
             username: "",
             password: "",
             server: "matrix.org",
@@ -27,12 +29,9 @@ export class LoginViewModel
             loggingIn: false,
             error: null,
             checking: false,
-            supportsOidc: null,
+            supportsOidc: true,
             supportsPassword: null,
         });
-
-        // Automatically check capabilities for default server
-        this.checkHomeserverAndContinue();
     }
 
     public setUsername(username: string): void {
@@ -88,7 +87,7 @@ export class LoginViewModel
         }
     }
 
-    public async checkHomeserverAndContinue(): Promise<void> {
+    public async checkCapabilitiesAndContinue(): Promise<void> {
         const { server } = this.getSnapshot();
         if (!server) return;
 
@@ -107,21 +106,23 @@ export class LoginViewModel
                 password: passwordSupported,
             });
 
-            // If OIDC is supported, use it (regardless of password support)
+            // Determine which flow to transition to
+            let nextFlow: LoginFlow;
             if (oidcSupported) {
-                this.snapshot.merge({
-                    supportsOidc: true,
-                    supportsPassword: passwordSupported,
-                    checking: false,
-                });
+                nextFlow = LoginFlow.OIDC;
+            } else if (passwordSupported) {
+                nextFlow = LoginFlow.UsernamePassword;
             } else {
-                // Only show password form if OIDC is not supported
-                this.snapshot.merge({
-                    supportsOidc: false,
-                    supportsPassword: passwordSupported,
-                    checking: false,
-                });
+                // No supported login methods
+                throw new Error("No supported login methods available");
             }
+
+            this.snapshot.merge({
+                flow: nextFlow,
+                supportsOidc: oidcSupported,
+                supportsPassword: passwordSupported,
+                checking: false,
+            });
         } catch (e) {
             console.error("Failed to check homeserver capabilities:", e);
             this.snapshot.merge({
@@ -166,6 +167,15 @@ export class LoginViewModel
                 );
             }
 
+            // Track whether login completed successfully
+            let loginCompleted = false;
+
+            // Clean up event listeners and intervals
+            const cleanup = () => {
+                window.removeEventListener("message", handleMessage);
+                clearInterval(popupChecker);
+            };
+
             // Listen for the callback from the popup
             const handleMessage = async (event: MessageEvent) => {
                 if (event.origin !== window.location.origin) {
@@ -173,10 +183,24 @@ export class LoginViewModel
                 }
 
                 if (event.data?.type === "oidc-callback") {
-                    window.removeEventListener("message", handleMessage);
+                    loginCompleted = true;
+                    cleanup();
                     await this.completeOidcLogin(event.data.callbackUrl);
                 }
             };
+
+            // Check if popup was closed (user cancelled)
+            const popupChecker = setInterval(async () => {
+                if (popup.closed) {
+                    cleanup();
+                    if (!loginCompleted) {
+                        console.log(
+                            "OIDC popup closed - user cancelled login",
+                        );
+                        await this.props.onAbortOidcLogin();
+                    }
+                }
+            }, 500);
 
             window.addEventListener("message", handleMessage);
         } catch (e) {
@@ -199,23 +223,34 @@ export class LoginViewModel
                 `https://${server}`,
             );
         } catch (e) {
+            const errorMessage =
+                e instanceof Error ? e.message : String(e);
+
+            // Check if this is a user cancellation error
+            if (errorMessage.includes("OidcError.Cancelled")) {
+                console.log("OIDC login cancelled by user");
+                // Call abort to clean up the state
+                await this.props.onAbortOidcLogin();
+                return;
+            }
+
+            // This is an actual error, not a user cancellation
             console.error("OIDC callback error:", e);
             this.snapshot.merge({
-                error:
-                    e instanceof Error
-                        ? e.message
-                        : "Failed to complete OIDC login",
+                error: errorMessage || "Failed to complete OIDC login",
             });
         }
     }
 
     public usePasswordInstead(): void {
-        // Keep password support but disable OIDC to show password form
-        this.snapshot.merge({ supportsOidc: false });
+        // Transition to password login flow
+        this.snapshot.merge({ flow: LoginFlow.UsernamePassword });
     }
 
     public changeServer(): void {
+        // Go back to server input
         this.snapshot.merge({
+            flow: LoginFlow.ServerInput,
             supportsOidc: null,
             supportsPassword: null,
             error: null,
