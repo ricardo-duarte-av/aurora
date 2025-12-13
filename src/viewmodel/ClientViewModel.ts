@@ -13,11 +13,13 @@ import { TimelineViewModel } from "./TimelineViewModel";
 import {
     ClientBuilder,
     type ClientInterface,
+    type ClientSessionDelegate,
     type HomeserverLoginDetailsInterface,
     LogLevel,
     type OAuthAuthorizationDataInterface,
     OidcPrompt,
     type RoomListServiceInterface,
+    type Session,
     SlidingSyncVersionBuilder,
     type SyncServiceInterface,
     type TaskHandleInterface,
@@ -113,10 +115,45 @@ export class ClientViewModel
         }
     };
 
+    /**
+     * Create a session delegate that handles saving and retrieving sessions
+     * The SDK will call this delegate to persist session updates when tokens are refreshed
+     */
+    private getSessionDelegate = (): ClientSessionDelegate => ({
+        retrieveSessionFromKeychain: (userId: string): Session => {
+            console.log(
+                `[SessionDelegate] SDK requesting session for user: ${userId}`,
+            );
+            const sessions = this.props.sessionStore.load();
+            if (!sessions || !sessions[userId]) {
+                throw new Error(`No session found for user ${userId}`);
+            }
+            const session = sessions[userId];
+            console.log(
+                `[SessionDelegate] Returning session with oidcData: ${!!session.oidcData}`,
+            );
+            return session;
+        },
+        saveSessionInKeychain: (session: Session): void => {
+            console.log(
+                `[SessionDelegate] SDK triggered session save for ${session.userId}`,
+            );
+            console.log(
+                "[SessionDelegate] This indicates OIDC token refresh occurred",
+            );
+            console.log(
+                `[SessionDelegate] Session details: hasOidcData=${!!session.oidcData}, ` +
+                    `hasAccessToken=${!!session.accessToken}, ` +
+                    `hasRefreshToken=${!!session.refreshToken}`,
+            );
+            this.props.sessionStore.save(session);
+        },
+    });
+
     private getClientBuilder = () =>
-        new ClientBuilder().slidingSyncVersionBuilder(
-            SlidingSyncVersionBuilder.DiscoverNative,
-        );
+        new ClientBuilder()
+            .slidingSyncVersionBuilder(SlidingSyncVersionBuilder.DiscoverNative)
+            .setSessionDelegate(this.getSessionDelegate());
 
     public async tryLoadSession(): Promise<void> {
         console.log(
@@ -437,7 +474,9 @@ export class ClientViewModel
                     this.clientDelegateHandle?.cancel();
                 });
             } else {
-                console.error("Failed to set client delegate - no handle returned");
+                console.error(
+                    "Failed to set client delegate - no handle returned",
+                );
             }
 
             const syncServiceBuilder = client.syncService();
