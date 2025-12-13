@@ -13,12 +13,19 @@ import { TimelineViewModel } from "./TimelineViewModel";
 import {
     ClientBuilder,
     type ClientInterface,
+    type ClientSessionDelegate,
+    type HomeserverLoginDetailsInterface,
     LogLevel,
+    type OAuthAuthorizationDataInterface,
+    OidcPrompt,
     type RoomListServiceInterface,
+    type Session,
     SlidingSyncVersionBuilder,
     type SyncServiceInterface,
+    type TaskHandleInterface,
     initPlatform,
 } from "../index.web.ts";
+import { getOidcConfiguration } from "../oidcConfig";
 import { printRustError } from "../utils.ts";
 import {
     ClientState,
@@ -27,6 +34,7 @@ import {
     type LoginParams,
     type Props,
 } from "./client-view.types";
+import { LoginViewModel } from "./LoginViewModel";
 import { RoomListViewModel } from "./RoomListViewModel";
 
 export class ClientViewModel
@@ -35,24 +43,33 @@ export class ClientViewModel
 {
     private syncService?: SyncServiceInterface;
     private roomListService?: RoomListServiceInterface;
+    private oidcAuthData?: OAuthAuthorizationDataInterface;
+    private clientDelegateHandle?: TaskHandleInterface;
+    private client?: ClientInterface;
 
     public constructor(props: Props) {
         super(props, {
             clientState: ClientState.Unknown,
-            client: undefined,
             timelineStore: undefined,
             roomListViewModel: undefined,
+            loginViewModel: undefined,
             memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
             avatarUrl: undefined,
             currentRoomId: undefined,
         });
-    }
 
-    // Private getter for accessing client from snapshot
-    private get client(): ClientInterface | undefined {
-        return this.getSnapshot().client;
+        // Create loginViewModel after super() call
+        this.snapshot.merge({
+            loginViewModel: new LoginViewModel({
+                onLogin: this.login.bind(this),
+                onCheckHomeserver: this.checkHomeserverCapabilities.bind(this),
+                onGetOidcAuthUrl: this.getOidcAuthUrl.bind(this),
+                onLoginWithOidcCallback: this.loginWithOidcCallback.bind(this),
+                onAbortOidcLogin: this.abortOidcLogin.bind(this),
+            }),
+        });
     }
 
     private async registerServiceWorker() {
@@ -69,8 +86,7 @@ export class ClientViewModel
     }
 
     private onServiceWorkerPostMessage = (event: MessageEvent): void => {
-        const client = this.getSnapshot().client;
-        if (!client) return;
+        if (!this.client) return;
         try {
             const data = event.data as { type?: string; responseKey?: string };
             if (
@@ -78,8 +94,8 @@ export class ClientViewModel
                 data?.type === "userinfo" &&
                 data?.responseKey
             ) {
-                const accessToken = client.session().accessToken;
-                const homeserver = client.homeserver();
+                const accessToken = this.client.session().accessToken;
+                const homeserver = this.client.homeserver();
                 const source = event.source;
                 if (source) {
                     source.postMessage({
@@ -94,10 +110,42 @@ export class ClientViewModel
         }
     };
 
+    /**
+     * Create a session delegate that handles saving and retrieving sessions
+     * The SDK will call this delegate to persist session updates when tokens are refreshed
+     */
+    private getSessionDelegate = (): ClientSessionDelegate => ({
+        retrieveSessionFromKeychain: (userId: string): Session => {
+            console.log(
+                `[SessionDelegate] SDK requesting session for user: ${userId}`,
+            );
+            const sessions = this.props.sessionStore.load();
+            if (!sessions || !sessions[userId]) {
+                throw new Error(`No session found for user ${userId}`);
+            }
+            const session = sessions[userId];
+            console.log(
+                `[SessionDelegate] Returning session with oidcData: ${!!session.oidcData}`,
+            );
+            return session;
+        },
+        saveSessionInKeychain: (session: Session): void => {
+            console.log(
+                `[SessionDelegate] SDK triggered session save for ${session.userId}`,
+            );
+            console.log(
+                `[SessionDelegate] Session details: hasOidcData=${!!session.oidcData}, ` +
+                    `hasAccessToken=${!!session.accessToken}, ` +
+                    `hasRefreshToken=${!!session.refreshToken}`,
+            );
+            this.props.sessionStore.save(session);
+        },
+    });
+
     private getClientBuilder = () =>
-        new ClientBuilder().slidingSyncVersionBuilder(
-            SlidingSyncVersionBuilder.DiscoverNative,
-        );
+        new ClientBuilder()
+            .slidingSyncVersionBuilder(SlidingSyncVersionBuilder.DiscoverNative)
+            .setSessionDelegate(this.getSessionDelegate());
 
     public async tryLoadSession(): Promise<void> {
         console.log(
@@ -124,19 +172,18 @@ export class ClientViewModel
                 throw new Error("No session found");
             }
 
-            const client = await this.getClientBuilder()
-                .homeserverUrl(session.homeserverUrl)
+            this.client = await this.getClientBuilder()
+                .serverNameOrHomeserverUrl(session.homeserverUrl)
                 .build();
-            await client.restoreSession(session);
+            await this.client.restoreSession(session);
 
-            const userId = client.userId();
-            const displayName = await client.displayName();
-            const avatarUrl = await client.avatarUrl();
+            const userId = this.client.userId();
+            const displayName = await this.client.displayName();
+            const avatarUrl = await this.client.avatarUrl();
 
             console.log("Session restored, transitioning to LoggedIn");
             this.snapshot.merge({
                 clientState: ClientState.LoggedIn,
-                client,
                 userId,
                 displayName,
                 avatarUrl,
@@ -151,15 +198,25 @@ export class ClientViewModel
         await this.sync();
     }
 
+    /**
+     * Log out the current user
+     * This can be called either:
+     * 1. By the user explicitly logging out
+     * 2. Automatically when the SDK detects an auth error (e.g. M_UNKNOWN_TOKEN)
+     *
+     * Note: Currently treats all logouts as hard logouts (clearing all session data).
+     * Soft logout support can be added later.
+     */
     public logout(): void {
         const userId = this.client?.userId();
         if (userId) {
             this.props.sessionStore.clear(userId);
         }
 
+        this.client = undefined;
+
         this.snapshot.set({
             clientState: ClientState.LoggedOut,
-            client: undefined,
             timelineStore: undefined,
             roomListViewModel: undefined,
             memberListStore: undefined,
@@ -167,73 +224,236 @@ export class ClientViewModel
             displayName: undefined,
             avatarUrl: undefined,
             currentRoomId: undefined,
+            // Keep loginViewModel so we can log in again
+            loginViewModel: this.getSnapshot().loginViewModel,
         });
     }
 
-    public async login({
-        username,
-        password,
-        server,
-    }: LoginParams): Promise<void> {
-        this.snapshot.merge({ clientState: ClientState.LoggingIn });
+    /**
+     * Initialize platform (SDK logging) - should only be called once
+     */
+    private initializePlatform(): void {
+        initPlatform(
+            {
+                logLevel: LogLevel.Trace,
+                traceLogPacks: [],
+                extraTargets: [],
+                writeToStdoutOrSystem: true,
+                writeToFiles: undefined,
+            },
+            true,
+        );
+    }
 
-        const client = await this.getClientBuilder()
-            .homeserverUrl(server)
-            .build();
+    /**
+     * Complete login after authentication succeeds
+     * Saves session, updates state, and starts sync
+     */
+    private async completeLogin(): Promise<void> {
+        if (!this.client) {
+            throw new Error("Client not available");
+        }
 
-        console.log("starting sdk...");
-        try {
-            initPlatform(
-                {
-                    logLevel: LogLevel.Trace,
-                    traceLogPacks: [],
-                    extraTargets: [],
-                    writeToStdoutOrSystem: true,
-                    writeToFiles: undefined,
-                },
-                true,
-            );
+        // Save the session
+        this.props.sessionStore.save(this.client.session());
 
-            await client.login(username, password, "rust-sdk", undefined);
-            console.log("logged in...");
-            this.props.sessionStore.save(client.session());
+        const userId = this.client.userId();
+        const displayName = await this.client.displayName();
+        const avatarUrl = await this.client.avatarUrl();
 
-            const userId = client.userId();
-            const displayName = await client.displayName();
-            const avatarUrl = await client.avatarUrl();
+        this.snapshot.merge({
+            clientState: ClientState.LoggedIn,
+            userId,
+            displayName,
+            avatarUrl,
+        });
+        this.getSnapshot().loginViewModel?.setLoggingIn(false);
 
-            this.snapshot.merge({
-                clientState: ClientState.LoggedIn,
-                client,
-                userId,
-                displayName,
-                avatarUrl,
-            });
-
-            // Notify parent that login completed
-            if (this.props.onLogin && userId) {
-                this.props.onLogin(userId, this);
-            }
-        } catch (e) {
-            printRustError("login failed", e);
-            this.snapshot.merge({ clientState: ClientState.Unknown });
-            return;
+        // Notify parent that login completed
+        if (this.props.onLogin && userId) {
+            this.props.onLogin(userId, this);
         }
 
         await this.sync();
     }
 
+    /**
+     * Handle login failure
+     */
+    private handleLoginFailure(error: unknown, errorMessage: string): void {
+        printRustError(errorMessage, error);
+        this.snapshot.merge({ clientState: ClientState.Unknown });
+        this.getSnapshot().loginViewModel?.setLoggingIn(false);
+    }
+
+    public async login({
+        username,
+        password,
+    }: LoginParams): Promise<void> {
+        this.snapshot.merge({ clientState: ClientState.LoggingIn });
+        this.getSnapshot().loginViewModel?.setLoggingIn(true);
+
+        if (!this.client) {
+            throw new Error(
+                "No client available. Call checkHomeserverCapabilities first.",
+            );
+        }
+
+        try {
+            this.initializePlatform();
+            await this.client.login(username, password, "rust-sdk", undefined);
+            console.log("Password login successful");
+            await this.completeLogin();
+        } catch (e) {
+            this.handleLoginFailure(e, "Password login failed");
+            throw e;
+        }
+    }
+
+    /**
+     * Check what login methods a homeserver supports
+     * Returns login details including OIDC and password support
+     */
+    public async checkHomeserverCapabilities(
+        server: string,
+    ): Promise<HomeserverLoginDetailsInterface> {
+        try {
+            // Create the auth client - this will be reused for login
+            this.client = await this.getClientBuilder()
+                .serverNameOrHomeserverUrl(server)
+                .build();
+
+            const loginDetails = await this.client.homeserverLoginDetails();
+
+            return loginDetails;
+        } catch (e) {
+            printRustError("Failed to check homeserver capabilities", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Get OIDC authorization URL for a given server
+     * This initiates the OIDC login flow
+     * Expects client to already exist from checkHomeserverCapabilities
+     */
+    public async getOidcAuthUrl(
+        _server: string,
+        loginHint?: string,
+    ): Promise<OAuthAuthorizationDataInterface> {
+        if (!this.client) {
+            throw new Error(
+                "No client available. Call checkHomeserverCapabilities first.",
+            );
+        }
+
+        try {
+            const oidcConfig = getOidcConfiguration();
+
+            // Use "Consent" prompt for login (Create is broken per element-x-ios)
+            const authData = await this.client.urlForOidc(
+                oidcConfig,
+                OidcPrompt.Consent.new(),
+                loginHint,
+                undefined, // deviceId - let SDK generate
+                undefined, // additionalScopes
+            );
+
+            // Store auth data for later use
+            this.oidcAuthData = authData;
+
+            return authData;
+        } catch (e) {
+            printRustError("Failed to get OIDC auth URL", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Complete OIDC login with the callback URL
+     * Called after the user successfully authenticates with the OIDC provider
+     * Expects client to already exist from checkHomeserverCapabilities
+     */
+    public async loginWithOidcCallback(
+        callbackUrl: string,
+        _homeserverUrl: string,
+    ): Promise<void> {
+        this.snapshot.merge({ clientState: ClientState.LoggingIn });
+        this.getSnapshot().loginViewModel?.setLoggingIn(true);
+
+        if (!this.client) {
+            throw new Error(
+                "No client available. Call checkHomeserverCapabilities first.",
+            );
+        }
+
+        try {
+            this.initializePlatform();
+            await this.client.loginWithOidcCallback(callbackUrl);
+            console.log("OIDC login successful");
+            await this.completeLogin();
+        } catch (e) {
+            this.handleLoginFailure(e, "OIDC login failed");
+            throw e;
+        }
+    }
+
+    /**
+     * Abort an in-progress OIDC login
+     * Should be called if the user cancels the login flow
+     */
+    public async abortOidcLogin(): Promise<void> {
+        if (!this.client || !this.oidcAuthData) {
+            console.warn("No OIDC login in progress to abort");
+            return;
+        }
+
+        try {
+            await this.client.abortOidcAuth(this.oidcAuthData);
+            console.log("OIDC login aborted");
+        } catch (e) {
+            printRustError("Failed to abort OIDC login", e);
+        } finally {
+            this.oidcAuthData = undefined;
+            this.snapshot.merge({ clientState: ClientState.LoggedOut });
+            this.getSnapshot().loginViewModel?.setLoggingIn(false);
+        }
+    }
+
     private async sync(): Promise<void> {
         this.registerServiceWorker();
 
-        const client = this.getSnapshot().client;
-        if (!client) {
+        if (!this.client) {
             console.error("Cannot sync without client");
             return;
         }
 
         try {
-            const syncServiceBuilder = client.syncService();
+            // Set up client delegate to handle auth errors
+            const delegateHandle = this.client.setDelegate({
+                didReceiveAuthError: (isSoftLogout: boolean) => {
+                    console.error(
+                        `Received authentication error, soft logout: ${isSoftLogout}`,
+                    );
+                    // For now, treat all auth errors as hard logout
+                    // We can add soft logout support later
+                    this.logout();
+                },
+            });
+
+            // Track the delegate handle so it gets cleaned up properly
+            if (delegateHandle) {
+                this.clientDelegateHandle = delegateHandle;
+                this.disposables.track(() => {
+                    this.clientDelegateHandle?.cancel();
+                });
+            } else {
+                console.error(
+                    "Failed to set client delegate - no handle returned",
+                );
+            }
+
+            const syncServiceBuilder = this.client.syncService();
             this.syncService = await syncServiceBuilder
                 .withOfflineMode()
                 .finish();
@@ -274,14 +494,16 @@ export class ClientViewModel
         currentTimeline?.dispose();
         snapshot.memberListStore?.dispose();
 
-        const client = snapshot.client;
-        if (!client) return;
+        if (!this.client) return;
 
-        const room = client.getRoom(roomId);
+        const room = this.client.getRoom(roomId);
         if (!room) return;
 
         const timelineStore = new TimelineViewModel({ room });
-        const memberListStore = new MemberListViewModel({ roomId, client });
+        const memberListStore = new MemberListViewModel({
+            roomId,
+            client: this.client,
+        });
 
         this.snapshot.merge({
             timelineStore,

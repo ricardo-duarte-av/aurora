@@ -24,8 +24,6 @@ export class SessionStore {
             sessionsV2[key] = Session.new(sessions[key]);
         }
 
-        console.log("Loaded sessions:", sessionsV2);
-
         return sessionsV2;
     }
 

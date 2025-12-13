@@ -1,80 +1,38 @@
-import {
-    Form,
-    Glass,
-    InlineSpinner,
-    TooltipProvider,
-} from "@vector-im/compound-web";
+import { Glass, TooltipProvider } from "@vector-im/compound-web";
+import { useViewModel } from "@element-hq/web-shared-components";
 import type React from "react";
-import { useState } from "react";
-import { useClientStoreContext } from "./context/ClientStoreContext";
+import type { LoginViewModel } from "./viewmodel/LoginViewModel";
+import { LoginFlow } from "./viewmodel/login-view.types";
+import { ServerInputScreen } from "./ServerInputScreen";
+import { OidcLoginScreen } from "./OidcLoginScreen";
+import { UsernamePasswordScreen } from "./UsernamePasswordScreen";
 
 export interface LoginProps {
-    loggingIn: boolean;
+    loginViewModel: LoginViewModel;
 }
 
-export const Login: React.FC<LoginProps> = ({ loggingIn }) => {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [server, setServer] = useState("matrix.org");
-    const [clientViewModel] = useClientStoreContext();
+export const Login: React.FC<LoginProps> = ({ loginViewModel }) => {
+    const { flow } = useViewModel(loginViewModel);
+
+    const renderFlow = () => {
+        switch (flow) {
+            case LoginFlow.ServerInput:
+                return <ServerInputScreen loginViewModel={loginViewModel} />;
+            case LoginFlow.OIDC:
+                return <OidcLoginScreen loginViewModel={loginViewModel} />;
+            case LoginFlow.UsernamePassword:
+                return (
+                    <UsernamePasswordScreen loginViewModel={loginViewModel} />
+                );
+        }
+    };
 
     return (
         <div className="mx_LoginPage">
             <div className="mx_Login">
                 <Glass>
                     <div className="mx_Login_dialog">
-                        <TooltipProvider>
-                            <Form.Root
-                                style={{ padding: "var(--cpd-space-5x)" }}
-                                onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    await clientViewModel.login({
-                                        username,
-                                        password,
-                                        server: `https://${server}`,
-                                    });
-                                }}
-                            >
-                                <Form.Field name="username">
-                                    <Form.Label>Username</Form.Label>
-                                    <Form.TextControl
-                                        disabled={loggingIn}
-                                        value={username}
-                                        onChange={(e) =>
-                                            setUsername(e.target.value)
-                                        }
-                                    />
-                                </Form.Field>
-
-                                <Form.Field name="password">
-                                    <Form.Label>Password</Form.Label>
-                                    <Form.PasswordControl
-                                        disabled={loggingIn}
-                                        value={password}
-                                        onChange={(e) =>
-                                            setPassword(e.target.value)
-                                        }
-                                    />
-                                </Form.Field>
-
-                                <Form.Field name="server">
-                                    <Form.Label>Server</Form.Label>
-                                    <Form.TextControl
-                                        disabled={loggingIn}
-                                        value={server}
-                                        onChange={(e) =>
-                                            setServer(e.target.value)
-                                        }
-                                    />
-                                </Form.Field>
-
-                                <Form.Submit
-                                    disabled={!username || !password || !server}
-                                >
-                                    {loggingIn ? <InlineSpinner /> : "Login"}
-                                </Form.Submit>
-                            </Form.Root>
-                        </TooltipProvider>
+                        <TooltipProvider>{renderFlow()}</TooltipProvider>
                     </div>
                 </Glass>
             </div>

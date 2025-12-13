@@ -5,6 +5,7 @@ import { InlineSpinner } from "@vector-im/compound-web";
 import { useViewModel } from "@element-hq/web-shared-components";
 import { Client } from "./Client.tsx";
 import { Login } from "./Login.tsx";
+import { OidcCallback } from "./OidcCallback.tsx";
 import { useClientStoreContext } from "./context/ClientStoreContext";
 import { useClientStoresContext } from "./context/ClientStoresContext";
 import { useSessionStoreContext } from "./context/SessionStoreContext";
@@ -18,7 +19,15 @@ const App: React.FC = () => {
     const [, addClientStore] = useClientStoresContext();
     const sessionStore = useSessionStoreContext();
 
-    const { clientState } = useViewModel(clientViewModel);
+    // Check if we're on the OIDC callback route
+    const isOidcCallback = window.location.pathname === "/oidc/callback";
+
+    // If this is the OIDC callback, render the callback handler
+    if (isOidcCallback) {
+        return <OidcCallback />;
+    }
+
+    const { clientState, loginViewModel } = useViewModel(clientViewModel);
     console.log("App rendering with clientState:", clientState);
 
     let component: ReactNode;
@@ -37,14 +46,18 @@ const App: React.FC = () => {
         component = (
             <Client
                 onAddAccount={() => {
-                    console.log("Add Account clicked - creating new ClientViewModel");
+                    console.log(
+                        "Add Account clicked - creating new ClientViewModel",
+                    );
                     const newClientViewModel = new ClientViewModel({
                         sessionStore,
                         onLogin: addClientStore,
                     });
                     console.log("Setting new ClientViewModel as active");
                     setClientViewModel(newClientViewModel);
-                    console.log("Calling tryLoadSession (should transition to LoggedOut)");
+                    console.log(
+                        "Calling tryLoadSession (should transition to LoggedOut)",
+                    );
                     newClientViewModel.tryLoadSession();
                 }}
             />
@@ -53,7 +66,9 @@ const App: React.FC = () => {
         clientState === ClientState.LoggedOut ||
         clientState === ClientState.LoggingIn
     ) {
-        component = <Login loggingIn={clientState === ClientState.LoggingIn} />;
+        component = loginViewModel ? (
+            <Login loginViewModel={loginViewModel} />
+        ) : null;
     }
 
     return <div className="mx_App">{component}</div>;
