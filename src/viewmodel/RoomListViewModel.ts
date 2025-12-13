@@ -53,6 +53,8 @@ export class RoomListViewModel
             filters: initialFilters,
             canLoadMore: true,
         });
+
+        this.run();
     }
 
     private parseRoom(room: RoomInterface): RoomListItemViewModel {
@@ -113,7 +115,7 @@ export class RoomListViewModel
         }
     };
 
-    public run = (): void => {
+    private run = (): void => {
         (async () => {
             this.running = true;
             const abortController = new AbortController();
@@ -135,6 +137,11 @@ export class RoomListViewModel
             this.controller.setFilter(FILTERS[selectedFilter].method);
             this.controller.addOnePage();
         })();
+
+        this.disposables.track(() => {
+            this.stateStream?.cancel();
+            this.running = false;
+        });
     };
 
     private subscribeToRooms = (): void => {

@@ -244,7 +244,6 @@ export class ClientViewModel
                 syncServiceInterface: this.syncService,
                 roomListService: this.roomListService,
             });
-            roomListViewModel.run();
 
             console.log("Sync services created, transitioning to Syncing");
             this.snapshot.merge({
@@ -267,12 +266,13 @@ export class ClientViewModel
         const currentTimeline = snapshot.timelineStore;
 
         // Check if we're already viewing this room
-        if (currentTimeline && currentTimeline.props.room.id() === roomId) {
+        if (snapshot.currentRoomId === roomId) {
             return;
         }
 
-        // Stop the current timeline
-        currentTimeline?.stop();
+        // Dispose the current timeline and member list
+        currentTimeline?.dispose();
+        snapshot.memberListStore?.dispose();
 
         const client = snapshot.client;
         if (!client) return;
@@ -281,10 +281,7 @@ export class ClientViewModel
         if (!room) return;
 
         const timelineStore = new TimelineViewModel({ room });
-        timelineStore.run();
-
         const memberListStore = new MemberListViewModel({ roomId, client });
-        memberListStore.run();
 
         this.snapshot.merge({
             timelineStore,

@@ -27,6 +27,5 @@ export interface MemberListViewSnapshot {
 }
 
 export interface MemberListViewActions {
-    run(searchQuery?: string): Promise<void>;
     search(query: string): void;
 }

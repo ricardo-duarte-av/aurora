@@ -96,7 +96,10 @@ const InviteButton: React.FC<Props> = ({ vm }) => {
  * Member count of the room when there's nothing in the search field.
  * Number of matching members when searching.
  */
-function getHeaderLabelJSX(isLoading: boolean, memberCount: number): React.ReactNode {
+function getHeaderLabelJSX(
+    isLoading: boolean,
+    memberCount: number,
+): React.ReactNode {
     if (isLoading) {
         return (
             <Flex align="center" gap="8px">
@@ -112,7 +115,8 @@ function getHeaderLabelJSX(isLoading: boolean, memberCount: number): React.React
 
 export const MemberListHeaderView: React.FC<Props> = (props: Props) => {
     const vm = props.vm;
-    const { shouldShowSearch, shouldShowInvite, isLoading, memberCount } = useViewModel(vm);
+    const { shouldShowSearch, shouldShowInvite, isLoading, memberCount } =
+        useViewModel(vm);
     console.log("memberlist header view render", memberCount);
     let contentJSX: React.ReactNode;
 

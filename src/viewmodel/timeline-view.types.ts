@@ -23,6 +23,4 @@ export interface TimelineViewSnapshot {
 export interface TimelineViewActions {
     sendMessage(msg: string): Promise<void>;
     backPaginate(): Promise<void>;
-    run(): void;
-    stop(): void;
 }

@@ -44,12 +44,14 @@ export class MemberListViewModel
             sensitivity: "base",
             ignorePunctuation: false,
         });
+
+        this.run();
     }
 
-    public async run(searchQuery?: string): Promise<void> {
+    private async run(): Promise<void> {
         console.log("Running member list store", this.props.roomId);
         const { joined: joinedSdk, invited: invitedSdk } =
-            await this.loadMemberList(searchQuery);
+            await this.loadMemberList(undefined);
 
         console.log("members", joinedSdk, invitedSdk);
         const newMemberMap = new Map<string, MemberWithSeparator>();

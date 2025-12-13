@@ -29,12 +29,7 @@ const MemberListView: React.FC<IProps> = (props: IProps) => {
             return <hr className="mx_MemberListView_separator" />;
             // } else if (item.member) {
         }
-        return (
-            <RoomMemberTileView
-                member={item}
-                showPresence={false}
-            />
-        );
+        return <RoomMemberTileView member={item} showPresence={false} />;
         // }
         // } else {
         // 	return <ThreePidInviteTileView threePidInvite={item.threePidInvite} />;

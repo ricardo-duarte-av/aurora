@@ -147,6 +147,7 @@ export class TimelineViewModel
             firstItemIndex: INITIAL_FIRST_TIME_INDEX,
         });
         this.timelinePromise = this.props.room.timeline();
+        this.run();
     }
 
     private parseItem(item?: TimelineItemInterface): TimelineItem<any> {
@@ -235,7 +236,7 @@ export class TimelineViewModel
         this.paginationStatus = status;
     };
 
-    private onUpdate = (diff: Array<TimelineDiff>): void => {
+    public onUpdate = (diff: Array<TimelineDiff>): void => {
         const snapshot = this.getSnapshot();
         let newItems = [...snapshot.items];
 
@@ -347,7 +348,7 @@ export class TimelineViewModel
         });
     };
 
-    public run = (): void => {
+    private run = (): void => {
         if (this.running) return;
 
         (async () => {
@@ -359,13 +360,12 @@ export class TimelineViewModel
                 });
             this.running = true;
         })();
-    };
 
-    public stop = (): void => {
-        (async () => {
+        // Cleanup listeners when the ViewModel is disposed
+        this.disposables.track(() => {
             this.timelineListener?.cancel();
             this.paginationListener?.cancel();
             this.running = false;
-        })();
+        });
     };
 }
