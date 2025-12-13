@@ -139,9 +139,6 @@ export class ClientViewModel
                 `[SessionDelegate] SDK triggered session save for ${session.userId}`,
             );
             console.log(
-                "[SessionDelegate] This indicates OIDC token refresh occurred",
-            );
-            console.log(
                 `[SessionDelegate] Session details: hasOidcData=${!!session.oidcData}, ` +
                     `hasAccessToken=${!!session.accessToken}, ` +
                     `hasRefreshToken=${!!session.refreshToken}`,
