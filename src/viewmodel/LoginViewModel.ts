@@ -21,7 +21,7 @@ export class LoginViewModel
 {
     public constructor(props: Props) {
         super(props, {
-            flow: LoginFlow.OIDC,
+            flow: LoginFlow.ServerInput,
             username: "",
             password: "",
             server: "matrix.org",
@@ -77,7 +77,7 @@ export class LoginViewModel
             await this.props.onLogin({
                 username,
                 password,
-                server: `https://${server}`,
+                server,
             });
         } catch (e) {
             console.error("Password login error:", e);
@@ -94,9 +94,7 @@ export class LoginViewModel
         this.snapshot.merge({ checking: true, error: null });
 
         try {
-            const loginDetails = await this.props.onCheckHomeserver(
-                `https://${server}`,
-            );
+            const loginDetails = await this.props.onCheckHomeserver(server);
 
             const oidcSupported = loginDetails.supportsOidcLogin();
             const passwordSupported = loginDetails.supportsPasswordLogin();
@@ -139,9 +137,8 @@ export class LoginViewModel
         const { server, username } = this.getSnapshot();
         try {
             this.snapshot.merge({ error: null });
-            const homeserverUrl = `https://${server}`;
             const authData = await this.props.onGetOidcAuthUrl(
-                homeserverUrl,
+                server,
                 username || undefined,
             );
 
@@ -194,9 +191,7 @@ export class LoginViewModel
                 if (popup.closed) {
                     cleanup();
                     if (!loginCompleted) {
-                        console.log(
-                            "OIDC popup closed - user cancelled login",
-                        );
+                        console.log("OIDC popup closed - user cancelled login");
                         await this.props.onAbortOidcLogin();
                     }
                 }
@@ -218,13 +213,9 @@ export class LoginViewModel
         const { server } = this.getSnapshot();
         try {
             this.snapshot.merge({ error: null });
-            await this.props.onLoginWithOidcCallback(
-                callbackUrl,
-                `https://${server}`,
-            );
+            await this.props.onLoginWithOidcCallback(callbackUrl, server);
         } catch (e) {
-            const errorMessage =
-                e instanceof Error ? e.message : String(e);
+            const errorMessage = e instanceof Error ? e.message : String(e);
 
             // Check if this is a user cancellation error
             if (errorMessage.includes("OidcError.Cancelled")) {
