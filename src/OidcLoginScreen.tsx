@@ -11,7 +11,8 @@ export interface OidcLoginScreenProps {
 export const OidcLoginScreen: React.FC<OidcLoginScreenProps> = ({
     loginViewModel,
 }) => {
-    const { server, loggingIn, error } = useViewModel(loginViewModel);
+    const { server, loggingIn, error, supportsPassword } =
+        useViewModel(loginViewModel);
 
     return (
         <Form.Root
@@ -90,8 +91,23 @@ export const OidcLoginScreen: React.FC<OidcLoginScreenProps> = ({
                 style={{ width: "100%" }}
                 disabled={loggingIn}
             >
-                {loggingIn ? <InlineSpinner /> : "Continue"}
+                {loggingIn ? <InlineSpinner /> : "Continue with OIDC"}
             </Form.Submit>
+
+            {supportsPassword && (
+                <Button
+                    kind="secondary"
+                    size="lg"
+                    style={{
+                        width: "100%",
+                        marginTop: "var(--cpd-space-2x)",
+                    }}
+                    disabled={loggingIn}
+                    onClick={() => loginViewModel.usePasswordInstead()}
+                >
+                    Use password instead
+                </Button>
+            )}
 
             <Button
                 kind="tertiary"

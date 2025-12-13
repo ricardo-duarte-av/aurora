@@ -119,6 +119,11 @@ export interface LoginViewActions {
     completeOidcLogin(callbackUrl: string): Promise<void>;
 
     /**
+     * Switch to password login if OIDC is available
+     */
+    usePasswordInstead(): void;
+
+    /**
      * Go back to server selection
      */
     changeServer(): void;
