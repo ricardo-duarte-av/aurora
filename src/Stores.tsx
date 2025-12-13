@@ -41,7 +41,6 @@ export function Stores({ children }: PropsWithChildren) {
     useEffect(() => {
         const load = async () => {
             const sessions = sessionStore.load();
-            console.log("Loaded sessions", sessions);
             if (!sessions || Object.keys(sessions).length === 0) {
                 const viewModel = new ClientViewModel({
                     sessionStore,

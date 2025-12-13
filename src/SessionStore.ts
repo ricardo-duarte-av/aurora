@@ -24,8 +24,6 @@ export class SessionStore {
             sessionsV2[key] = Session.new(sessions[key]);
         }
 
-        console.log("Loaded sessions:", sessionsV2);
-
         return sessionsV2;
     }
 
@@ -51,17 +49,6 @@ export class SessionStore {
 
         sessions[session.userId] = session;
         localStorage.setItem("mx_session_v2", JSON.stringify(sessions));
-
-        // Log session details for debugging token expiry
-        console.log(
-            `[SessionStore] Saved session for ${session.userId}:`,
-            {
-                hasAccessToken: !!session.accessToken,
-                hasRefreshToken: !!session.refreshToken,
-                hasOidcData: !!session.oidcData,
-                deviceId: session.deviceId,
-            },
-        );
     }
 
     clear(userId: string): void {
