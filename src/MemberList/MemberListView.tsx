@@ -1,31 +1,28 @@
 import { Form, TooltipProvider } from "@vector-im/compound-web";
 import type React from "react";
-import { useSyncExternalStore } from "react";
-import { type JSX } from "react";
+import { useViewModel } from "@element-hq/web-shared-components";
+import type { JSX } from "react";
 import { Virtuoso } from "react-virtuoso";
 
 import { Flex } from "../utils/Flex";
 import BaseCard from "./BaseCard";
 import { MemberListHeaderView } from "./MemberListHeaderView";
 import {
-    type MemberListStore,
     type MemberWithSeparator,
     SEPARATOR,
-} from "./MemberListStore";
+} from "../viewmodel/member-list-view.types";
+import type { MemberListViewModel } from "../viewmodel/MemberListViewModel";
 import { RoomMemberTileView } from "./tiles/RoomMemberTileView";
 import "./MemberList.css";
 
 interface IProps {
-    vm: MemberListStore;
+    vm: MemberListViewModel;
 }
 
 const MemberListView: React.FC<IProps> = (props: IProps) => {
     const { vm } = props;
 
-    const { members, memberCount } = useSyncExternalStore(
-        vm.subscribe,
-        vm.getSnapshot,
-    );
+    const { members, memberCount } = useViewModel(vm);
 
     const getRowComponent = (item: MemberWithSeparator): JSX.Element => {
         if (item === SEPARATOR) {
@@ -35,7 +32,7 @@ const MemberListView: React.FC<IProps> = (props: IProps) => {
         return (
             <RoomMemberTileView
                 member={item}
-                showPresence={vm.isPresenceEnabled()}
+                showPresence={false}
             />
         );
         // }
@@ -51,18 +48,18 @@ const MemberListView: React.FC<IProps> = (props: IProps) => {
              * joined and invited members.
              */
             return 2;
-        } else if (memberCount && index === memberCount) {
+        }
+        if (memberCount && index === memberCount) {
             /**
              * The empty spacer div rendered at the bottom should
              * have a height of 32px.
              */
             return 32;
-        } else {
-            /**
-             * The actual member tiles have a height of 56px.
-             */
-            return 56;
         }
+        /**
+         * The actual member tiles have a height of 56px.
+         */
+        return 56;
     };
 
     const rowRenderer = ({

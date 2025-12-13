@@ -1,53 +1,43 @@
 /*
-Copyright 2024 New Vector Ltd.
-Copyright 2022 The Matrix.org Foundation C.I.C.
+ *
+ *  * Copyright 2025 New Vector Ltd.
+ *  *
+ *  * SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
+ *  * Please see LICENSE files in the repository root for full details.
+ *
+ */
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
-Please see LICENSE files in the repository root for full details.
-*/
-
-import {
-    type ClientInterface,
-    MembershipState_Tags,
-    type RoomMember,
-} from "../index.web";
-import type { ButtonEvent } from "../utils/ButtonEvent";
+import { BaseViewModel } from "@element-hq/web-shared-components";
+import { MembershipState_Tags, type RoomMember } from "../index.web";
+import type {
+    MemberListViewActions,
+    MemberListViewSnapshot,
+    MemberWithSeparator,
+    Props,
+} from "./member-list-view.types";
+import { SEPARATOR } from "./member-list-view.types";
 
 // Regex applied to filter our punctuation in member names before applying sort, to fuzzy it a little
 // matches all ASCII punctuation: !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
 const SORT_REGEX = /[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]+/g;
 
-export const SEPARATOR = "SEPARATOR";
-export type MemberWithSeparator = RoomMember | typeof SEPARATOR;
-
-//
-/**
- * A class for storing application state for MemberList.
- */
-export class MemberListStore {
+export class MemberListViewModel
+    extends BaseViewModel<MemberListViewSnapshot, Props>
+    implements MemberListViewActions
+{
     // cache of Display Name -> name to sort based on. This strips out special symbols like @.
     private readonly sortNames = new Map<string, string>();
-    // list of room IDs that have been lazy loaded
-    private readonly loadedRooms = new Set<string>();
-    roomId: string;
     private collator: Intl.Collator;
-    private client: ClientInterface;
-    listeners: Array<CallableFunction> = [];
 
-    public members: MemberWithSeparator[] = [];
-    public memberCount = 0;
-
-    public shouldShowInvite = false;
-    public shouldShowSearch = true;
-    public isLoading = false;
-    public canInvite = false;
-
-    public onInviteButtonClick = (ev: ButtonEvent) => {};
-
-    public constructor(roomId: string, client: ClientInterface) {
-        console.log("MemberListStore constructor", roomId);
-        this.roomId = roomId;
-        this.client = client;
+    public constructor(props: Props) {
+        super(props, {
+            members: [],
+            memberCount: 0,
+            shouldShowInvite: false,
+            shouldShowSearch: true,
+            isLoading: false,
+            canInvite: false,
+        });
 
         const language = "en";
         this.collator = new Intl.Collator(language, {
@@ -56,8 +46,8 @@ export class MemberListStore {
         });
     }
 
-    public async run(searchQuery?: string) {
-        console.log("Running memberliist store", this.roomId);
+    public async run(searchQuery?: string): Promise<void> {
+        console.log("Running member list store", this.props.roomId);
         const { joined: joinedSdk, invited: invitedSdk } =
             await this.loadMemberList(searchQuery);
 
@@ -79,30 +69,34 @@ export class MemberListStore {
             newMemberMap.set(member.userId, member);
         }
 
-        this.setMemberMap(newMemberMap);
-        this.setMemberCount(joinedSdk.length + invitedSdk.length);
-        console.log("memberlist store run count", this.memberCount);
+        const members = Array.from(newMemberMap.values());
+        const memberCount = joinedSdk.length + invitedSdk.length;
+
+        console.log("memberlist store run count", memberCount);
         console.log("memberlist store run newMemberMap", newMemberMap);
-        this.emit();
+
+        this.snapshot.merge({
+            members,
+            memberCount,
+        });
     }
 
     /**
      * Load the member list. Call this whenever the list may have changed.
-     * @param roomId The room to load the member list in
      * @param searchQuery Optional search query to filter the list.
      * @returns A list of filtered and sorted room members, grouped by membership.
      */
-    public async loadMemberList(
+    private async loadMemberList(
         searchQuery?: string,
     ): Promise<Record<"joined" | "invited", RoomMember[]>> {
-        if (!this.client) {
+        if (!this.props.client) {
             return {
                 joined: [],
                 invited: [],
             };
         }
 
-        const members = await this.loadMembers(this.roomId);
+        const members = await this.loadMembers(this.props.roomId);
 
         // Filter then sort as it's more efficient than sorting tons of members we will just filter out later.
         // Also sort each group, as there's no point comparing invited/joined users when they aren't in the same list!
@@ -123,7 +117,7 @@ export class MemberListStore {
 
     private async loadMembers(roomId: string): Promise<RoomMember[]> {
         if (!roomId) return [];
-        const room = this.client.getRoom(roomId);
+        const room = this.props.client.getRoom(roomId);
 
         if (!room) {
             return [];
@@ -141,10 +135,6 @@ export class MemberListStore {
         }
 
         return allMembers;
-    }
-
-    public isPresenceEnabled(): boolean {
-        return false;
     }
 
     /**
@@ -243,44 +233,7 @@ export class MemberListStore {
         return result;
     }
 
-    private setMemberMap(newMemberMap: Map<string, MemberWithSeparator>) {
-        this.members = Array.from(newMemberMap.values());
-    }
-
-    private setMemberCount(count: number) {
-        this.memberCount = count;
-    }
-
-    public search(query: string) {
+    public search(query: string): void {
         this.run(query);
     }
-
-    subscribe = (listener: CallableFunction) => {
-        this.listeners = [...this.listeners, listener];
-        return () => {
-            this.listeners = this.listeners.filter((l) => l !== listener);
-        };
-    };
-
-    snapshot: {
-        members: MemberWithSeparator[];
-        memberCount: number;
-    } = { members: [], memberCount: 0 };
-    getSnapshot = (): {
-        members: MemberWithSeparator[];
-        memberCount: number;
-    } => {
-        return this.snapshot;
-    };
-
-    emit = () => {
-        this.snapshot = {
-            members: this.members,
-            memberCount: this.memberCount,
-        };
-
-        for (const listener of this.listeners) {
-            listener();
-        }
-    };
 }

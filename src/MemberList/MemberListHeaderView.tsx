@@ -15,9 +15,10 @@ import {
 import type React from "react";
 import InviteIcon from "@vector-im/compound-design-tokens/assets/web/icons/user-add-solid";
 import { UserAddIcon } from "@vector-im/compound-design-tokens/assets/web/icons";
+import { useViewModel } from "@element-hq/web-shared-components";
 
 import { Flex } from "../utils/Flex";
-import type { MemberListStore } from "./MemberListStore";
+import type { MemberListViewModel } from "../viewmodel/MemberListViewModel";
 
 interface TooltipProps {
     canInvite: boolean;
@@ -37,13 +38,11 @@ const OptionalTooltip: React.FC<TooltipProps> = ({ canInvite, children }) => {
 };
 
 interface Props {
-    vm: MemberListStore;
+    vm: MemberListViewModel;
 }
 
 const InviteButton: React.FC<Props> = ({ vm }) => {
-    const shouldShowInvite = vm.shouldShowInvite;
-    const shouldShowSearch = vm.shouldShowSearch;
-    const disabled = !vm.canInvite;
+    const { shouldShowInvite, shouldShowSearch, canInvite } = useViewModel(vm);
 
     if (!shouldShowInvite) {
         // In this case, invite button should not be rendered.
@@ -53,15 +52,17 @@ const InviteButton: React.FC<Props> = ({ vm }) => {
     if (shouldShowSearch) {
         /// When rendered alongside a search box, the invite button is just an icon.
         return (
-            <OptionalTooltip canInvite={vm.canInvite}>
+            <OptionalTooltip canInvite={canInvite}>
                 <Button
                     className="mx_MemberListHeaderView_invite_small"
                     kind="primary"
-                    onClick={vm.onInviteButtonClick}
+                    onClick={(e) => {
+                        // onInviteButtonClick would be on the vm if implemented
+                    }}
                     size="sm"
                     iconOnly={true}
                     Icon={InviteIcon}
-                    disabled={disabled}
+                    disabled={!canInvite}
                     aria-label="Invite"
                     type="button"
                 />
@@ -71,14 +72,16 @@ const InviteButton: React.FC<Props> = ({ vm }) => {
 
     // Without a search box, invite button is a full size button.
     return (
-        <OptionalTooltip canInvite={vm.canInvite}>
+        <OptionalTooltip canInvite={canInvite}>
             <Button
                 kind="secondary"
                 size="sm"
                 Icon={UserAddIcon}
                 className="mx_MemberListHeaderView_invite_large"
-                disabled={!vm.canInvite}
-                onClick={vm.onInviteButtonClick}
+                disabled={!canInvite}
+                onClick={(e) => {
+                    // onInviteButtonClick would be on the vm if implemented
+                }}
                 type="button"
             >
                 Invite
@@ -91,28 +94,29 @@ const InviteButton: React.FC<Props> = ({ vm }) => {
  * This should be:
  * A loading text with spinner while the memberlist loads.
  * Member count of the room when there's nothing in the search field.
- * Number of matching members during search or 'No result' if search found nothing.
+ * Number of matching members when searching.
  */
-function getHeaderLabelJSX(vm: MemberListStore): React.ReactNode {
-    if (vm.isLoading) {
+function getHeaderLabelJSX(isLoading: boolean, memberCount: number): React.ReactNode {
+    if (isLoading) {
         return (
             <Flex align="center" gap="8px">
                 <InlineSpinner /> Loading...
             </Flex>
         );
     }
-    if (vm.memberCount === 0) {
+    if (memberCount === 0) {
         return "No matches";
     }
-    return `${vm.memberCount} members`;
+    return `${memberCount} members`;
 }
 
 export const MemberListHeaderView: React.FC<Props> = (props: Props) => {
     const vm = props.vm;
-    console.log("memberlist header view render", vm.memberCount);
+    const { shouldShowSearch, shouldShowInvite, isLoading, memberCount } = useViewModel(vm);
+    console.log("memberlist header view render", memberCount);
     let contentJSX: React.ReactNode;
 
-    if (vm.shouldShowSearch) {
+    if (shouldShowSearch) {
         // When we need to show the search box
         contentJSX = (
             <Flex
@@ -133,7 +137,7 @@ export const MemberListHeaderView: React.FC<Props> = (props: Props) => {
                 <InviteButton vm={vm} />
             </Flex>
         );
-    } else if (!vm.shouldShowSearch && vm.shouldShowInvite) {
+    } else if (!shouldShowSearch && shouldShowInvite) {
         // When we don't need to show the search box but still need an invite button
         contentJSX = (
             <Flex
@@ -156,14 +160,14 @@ export const MemberListHeaderView: React.FC<Props> = (props: Props) => {
             justify="space-between"
             direction="column"
         >
-            {!vm.isLoading && contentJSX}
+            {!isLoading && contentJSX}
             <Text
                 as="div"
                 size="sm"
                 weight="semibold"
                 className="mx_MemberListHeaderView_label"
             >
-                {getHeaderLabelJSX(vm)}
+                {getHeaderLabelJSX(isLoading, memberCount)}
             </Text>
         </Flex>
     );

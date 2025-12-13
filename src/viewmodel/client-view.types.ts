@@ -7,7 +7,7 @@
  *
  */
 
-import type { MemberListStore } from "../MemberList/MemberListStore";
+import type { MemberListViewModel } from "./MemberListViewModel";
 import type { SessionStore } from "../SessionStore";
 import type { TimelineViewModel } from "./TimelineViewModel";
 import type { ClientInterface } from "../index.web";
@@ -54,8 +54,8 @@ export interface ClientViewSnapshot {
     /** ViewModel for the list of all rooms */
     roomListViewModel?: RoomListViewModel;
 
-    /** Store for the current room's member list (will become ViewModel in future) */
-    memberListStore?: MemberListStore;
+    /** ViewModel for the current room's member list */
+    memberListStore?: MemberListViewModel;
 
     /** Current user ID */
     userId?: string;

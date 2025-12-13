@@ -8,7 +8,7 @@
  */
 
 import { BaseViewModel } from "@element-hq/web-shared-components";
-import { MemberListStore } from "../MemberList/MemberListStore";
+import { MemberListViewModel } from "./MemberListViewModel";
 import { TimelineViewModel } from "./TimelineViewModel";
 import {
     ClientBuilder,
@@ -283,7 +283,7 @@ export class ClientViewModel
         const timelineStore = new TimelineViewModel({ room });
         timelineStore.run();
 
-        const memberListStore = new MemberListStore(roomId, client);
+        const memberListStore = new MemberListViewModel({ roomId, client });
         memberListStore.run();
 
         this.snapshot.merge({
