@@ -7,20 +7,10 @@
 
 import type { MemberListViewModel } from "./MemberListViewModel";
 import type { SessionStore } from "../SessionStore";
-import type {
-    HomeserverLoginDetailsInterface,
-    OAuthAuthorizationDataInterface,
-} from "../index.web";
 import type { TimelineViewModel } from "./TimelineViewModel";
 import type { ClientViewModel } from "./ClientViewModel";
 import type { LoginViewModel } from "./LoginViewModel";
 import type { RoomListViewModel } from "./RoomListViewModel";
-
-// Re-export OIDC types for convenience
-export type {
-    HomeserverLoginDetailsInterface,
-    OAuthAuthorizationDataInterface,
-};
 
 export enum ClientState {
     Unknown = 0,

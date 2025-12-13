@@ -229,6 +229,63 @@ export class ClientViewModel
         });
     }
 
+    /**
+     * Initialize platform (SDK logging) - should only be called once
+     */
+    private initializePlatform(): void {
+        initPlatform(
+            {
+                logLevel: LogLevel.Trace,
+                traceLogPacks: [],
+                extraTargets: [],
+                writeToStdoutOrSystem: true,
+                writeToFiles: undefined,
+            },
+            true,
+        );
+    }
+
+    /**
+     * Complete login after authentication succeeds
+     * Saves session, updates state, and starts sync
+     */
+    private async completeLogin(): Promise<void> {
+        if (!this.client) {
+            throw new Error("Client not available");
+        }
+
+        // Save the session
+        this.props.sessionStore.save(this.client.session());
+
+        const userId = this.client.userId();
+        const displayName = await this.client.displayName();
+        const avatarUrl = await this.client.avatarUrl();
+
+        this.snapshot.merge({
+            clientState: ClientState.LoggedIn,
+            userId,
+            displayName,
+            avatarUrl,
+        });
+        this.getSnapshot().loginViewModel?.setLoggingIn(false);
+
+        // Notify parent that login completed
+        if (this.props.onLogin && userId) {
+            this.props.onLogin(userId, this);
+        }
+
+        await this.sync();
+    }
+
+    /**
+     * Handle login failure
+     */
+    private handleLoginFailure(error: unknown, errorMessage: string): void {
+        printRustError(errorMessage, error);
+        this.snapshot.merge({ clientState: ClientState.Unknown });
+        this.getSnapshot().loginViewModel?.setLoggingIn(false);
+    }
+
     public async login({
         username,
         password,
@@ -242,47 +299,15 @@ export class ClientViewModel
             );
         }
 
-        console.log("starting sdk...");
         try {
-            initPlatform(
-                {
-                    logLevel: LogLevel.Trace,
-                    traceLogPacks: [],
-                    extraTargets: [],
-                    writeToStdoutOrSystem: true,
-                    writeToFiles: undefined,
-                },
-                true,
-            );
-
+            this.initializePlatform();
             await this.client.login(username, password, "rust-sdk", undefined);
-            console.log("logged in...");
-            this.props.sessionStore.save(this.client.session());
-
-            const userId = this.client.userId();
-            const displayName = await this.client.displayName();
-            const avatarUrl = await this.client.avatarUrl();
-
-            this.snapshot.merge({
-                clientState: ClientState.LoggedIn,
-                userId,
-                displayName,
-                avatarUrl,
-            });
-            this.getSnapshot().loginViewModel?.setLoggingIn(false);
-
-            // Notify parent that login completed
-            if (this.props.onLogin && userId) {
-                this.props.onLogin(userId, this);
-            }
+            console.log("Password login successful");
+            await this.completeLogin();
         } catch (e) {
-            printRustError("login failed", e);
-            this.snapshot.merge({ clientState: ClientState.Unknown });
-            this.getSnapshot().loginViewModel?.setLoggingIn(false);
-            return;
+            this.handleLoginFailure(e, "Password login failed");
+            throw e;
         }
-
-        await this.sync();
     }
 
     /**
@@ -356,54 +381,21 @@ export class ClientViewModel
         this.snapshot.merge({ clientState: ClientState.LoggingIn });
         this.getSnapshot().loginViewModel?.setLoggingIn(true);
 
-        try {
-            if (!this.client) {
-                throw new Error(
-                    "No client available. Call checkHomeserverCapabilities first.",
-                );
-            }
-
-            initPlatform(
-                {
-                    logLevel: LogLevel.Trace,
-                    traceLogPacks: [],
-                    extraTargets: [],
-                    writeToStdoutOrSystem: true,
-                    writeToFiles: undefined,
-                },
-                true,
+        if (!this.client) {
+            throw new Error(
+                "No client available. Call checkHomeserverCapabilities first.",
             );
-
-            await this.client.loginWithOidcCallback(callbackUrl);
-            console.log("OIDC login successful");
-
-            // Save the session
-            this.props.sessionStore.save(this.client.session());
-
-            const userId = this.client.userId();
-            const displayName = await this.client.displayName();
-            const avatarUrl = await this.client.avatarUrl();
-
-            this.snapshot.merge({
-                clientState: ClientState.LoggedIn,
-                userId,
-                displayName,
-                avatarUrl,
-            });
-            this.getSnapshot().loginViewModel?.setLoggingIn(false);
-
-            // Notify parent that login completed
-            if (this.props.onLogin && userId) {
-                this.props.onLogin(userId, this);
-            }
-        } catch (e) {
-            printRustError("OIDC login failed", e);
-            this.snapshot.merge({ clientState: ClientState.Unknown });
-            this.getSnapshot().loginViewModel?.setLoggingIn(false);
-            throw e;
         }
 
-        await this.sync();
+        try {
+            this.initializePlatform();
+            await this.client.loginWithOidcCallback(callbackUrl);
+            console.log("OIDC login successful");
+            await this.completeLogin();
+        } catch (e) {
+            this.handleLoginFailure(e, "OIDC login failed");
+            throw e;
+        }
     }
 
     /**
