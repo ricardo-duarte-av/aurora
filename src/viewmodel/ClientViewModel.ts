@@ -20,6 +20,7 @@ import {
     type RoomListServiceInterface,
     SlidingSyncVersionBuilder,
     type SyncServiceInterface,
+    type TaskHandleInterface,
     initPlatform,
 } from "../index.web.ts";
 import { getOidcConfiguration } from "../oidcConfig";
@@ -41,6 +42,7 @@ export class ClientViewModel
     private syncService?: SyncServiceInterface;
     private roomListService?: RoomListServiceInterface;
     private oidcAuthData?: OAuthAuthorizationDataInterface;
+    private clientDelegateHandle?: TaskHandleInterface;
 
     public constructor(props: Props) {
         super(props, {
@@ -168,6 +170,15 @@ export class ClientViewModel
         await this.sync();
     }
 
+    /**
+     * Log out the current user
+     * This can be called either:
+     * 1. By the user explicitly logging out
+     * 2. Automatically when the SDK detects an auth error (e.g. M_UNKNOWN_TOKEN)
+     *
+     * Note: Currently treats all logouts as hard logouts (clearing all session data).
+     * Soft logout support can be added later.
+     */
     public logout(): void {
         const userId = this.client?.userId();
         if (userId) {
@@ -407,6 +418,28 @@ export class ClientViewModel
         }
 
         try {
+            // Set up client delegate to handle auth errors
+            const delegateHandle = client.setDelegate({
+                didReceiveAuthError: (isSoftLogout: boolean) => {
+                    console.error(
+                        `Received authentication error, soft logout: ${isSoftLogout}`,
+                    );
+                    // For now, treat all auth errors as hard logout
+                    // We can add soft logout support later
+                    this.logout();
+                },
+            });
+
+            // Track the delegate handle so it gets cleaned up properly
+            if (delegateHandle) {
+                this.clientDelegateHandle = delegateHandle;
+                this.disposables.track(() => {
+                    this.clientDelegateHandle?.cancel();
+                });
+            } else {
+                console.error("Failed to set client delegate - no handle returned");
+            }
+
             const syncServiceBuilder = client.syncService();
             this.syncService = await syncServiceBuilder
                 .withOfflineMode()
