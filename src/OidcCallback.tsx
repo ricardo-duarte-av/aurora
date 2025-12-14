@@ -32,8 +32,10 @@ export const OidcCallback: React.FC = () => {
                 window.location.origin,
             );
 
-            // Close the popup immediately
-            window.close();
+            // Close the popup after a brief delay to ensure message is sent
+            setTimeout(() => {
+                window.close();
+            }, 100);
         } else {
             // No opener - log error but don't block
             console.error(
@@ -42,6 +44,20 @@ export const OidcCallback: React.FC = () => {
         }
     }, []);
 
-    // Render nothing - the window will close immediately
-    return null;
+    // Show a loading indicator while closing
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100vh",
+                backgroundColor: "var(--cpd-color-bg-canvas-default)",
+            }}
+        >
+            <p style={{ color: "var(--cpd-color-text-primary)" }}>
+                Completing sign in...
+            </p>
+        </div>
+    );
 };

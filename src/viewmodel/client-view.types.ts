@@ -9,15 +9,16 @@ import type { MemberListViewModel } from "./MemberListViewModel";
 import type { SessionStore } from "../SessionStore";
 import type { TimelineViewModel } from "./TimelineViewModel";
 import type { ClientViewModel } from "./ClientViewModel";
+import type { EncryptionViewModel } from "./EncryptionViewModel";
 import type { LoginViewModel } from "./LoginViewModel";
 import type { RoomListViewModel } from "./RoomListViewModel";
 
 export enum ClientState {
     Unknown = 0,
     LoadingSession = 1,
-    LoggedOut = 3,
-    LoggingIn = 4,
-    LoggedIn = 2,
+    LoggedOut = 2,
+    LoggingIn = 3,
+    SettingUpEncryption = 4,
     Syncing = 5,
 }
 
@@ -54,6 +55,9 @@ export interface ClientViewSnapshot {
 
     /** ViewModel for the current room's member list */
     memberListStore?: MemberListViewModel;
+
+    /** ViewModel for encryption and recovery management */
+    encryptionViewModel?: EncryptionViewModel;
 
     /** Current user ID */
     userId?: string;

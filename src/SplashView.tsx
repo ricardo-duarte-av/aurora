@@ -6,7 +6,7 @@
  */
 
 import "./SplashView.css";
-import { type JSX } from "react";
+import type { JSX } from "react";
 import splash from "./assets/splash.svg";
 
 export function SplashView(): JSX.Element {

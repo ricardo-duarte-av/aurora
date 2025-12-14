@@ -4,6 +4,7 @@ import "./App.css";
 import { InlineSpinner } from "@vector-im/compound-web";
 import { useViewModel } from "@element-hq/web-shared-components";
 import { Client } from "./Client.tsx";
+import { Encryption } from "./Encryption.tsx";
 import { Login } from "./Login.tsx";
 import { OidcCallback } from "./OidcCallback.tsx";
 import { useClientStoreContext } from "./context/ClientStoreContext";
@@ -27,19 +28,30 @@ const App: React.FC = () => {
         return <OidcCallback />;
     }
 
-    const { clientState, loginViewModel } = useViewModel(clientViewModel);
+    const { clientState, loginViewModel, encryptionViewModel } =
+        useViewModel(clientViewModel);
     console.log("App rendering with clientState:", clientState);
 
     let component: ReactNode;
     if (
         clientState === ClientState.Unknown ||
-        clientState === ClientState.LoadingSession ||
-        clientState === ClientState.LoggedIn
+        clientState === ClientState.LoadingSession
     ) {
         component = (
             <div className="mx_LoadingSession">
                 <InlineSpinner size={32} />
                 <h2>Loading Session...</h2>
+            </div>
+        );
+    } else if (clientState === ClientState.SettingUpEncryption) {
+        // Show encryption setup if we have the view model, otherwise show loading
+        // LoggedIn state is used during session restore before sync starts
+        component = encryptionViewModel ? (
+            <Encryption encryptionViewModel={encryptionViewModel} />
+        ) : (
+            <div className="mx_LoadingSession">
+                <InlineSpinner size={32} />
+                <h2>Starting sync...</h2>
             </div>
         );
     } else if (clientState === ClientState.Syncing) {
