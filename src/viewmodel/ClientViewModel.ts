@@ -16,18 +16,14 @@ import { BaseViewModel } from "@element-hq/web-shared-components";
 import { MemberListViewModel } from "./MemberListViewModel";
 import { TimelineViewModel } from "./TimelineViewModel";
 import {
-    ClientBuilder,
     type ClientInterface,
     type ClientSessionDelegate,
     type HomeserverLoginDetailsInterface,
-    IndexedDbStoreBuilder,
     LogLevel,
     type OAuthAuthorizationDataInterface,
     OidcPrompt,
-    RecoveryState,
     type RoomListServiceInterface,
     type Session,
-    SlidingSyncVersionBuilder,
     type SyncServiceInterface,
     type TaskHandleInterface,
     initPlatform,
@@ -178,10 +174,6 @@ export class ClientViewModel
                 throw new Error("No session found");
             }
 
-            console.log(`[ClientViewModel] Restoring session for ${this.props.userIdForLoading}`);
-            console.log(`[ClientViewModel] - passphrase: ${sessionData.passphrase}`);
-            console.log(`[ClientViewModel] - storeId: ${sessionData.storeId}`);
-
             // Try to restore the client - if this fails due to decryption errors,
             // clean up the corrupted store to prevent getting stuck in a loop
             try {
@@ -193,9 +185,13 @@ export class ClientViewModel
             } catch (restoreError) {
                 console.error("Failed to restore client, cleaning up store");
                 // Delete the corrupted store
-                await this.props.sessionStore.deleteStoreById(sessionData.storeId);
+                await this.props.sessionStore.deleteStoreById(
+                    sessionData.storeId,
+                );
                 // Clear the session data
-                await this.props.sessionStore.clear(this.props.userIdForLoading);
+                await this.props.sessionStore.clear(
+                    this.props.userIdForLoading,
+                );
                 // Re-throw to be caught by outer catch
                 throw restoreError;
             }
@@ -431,17 +427,17 @@ export class ClientViewModel
             const session = this.client.session();
 
             console.log("Saving session with passphrase from auth flow");
-            console.log(
-                "[DEBUG] Passphrase being saved:",
-                this.storagePassphrase,
-            );
 
             // Use the passphrase that was generated when the authentication client was created
             // This ensures we can decrypt the IndexedDB on restore
             if (!this.storagePassphrase) {
                 throw new Error("No passphrase available from authentication");
             }
-            this.props.sessionStore.save(session, this.storagePassphrase, this.storageStoreId);
+            this.props.sessionStore.save(
+                session,
+                this.storagePassphrase,
+                this.storageStoreId,
+            );
             this.storagePassphrase = undefined;
             this.storageStoreId = undefined;
 

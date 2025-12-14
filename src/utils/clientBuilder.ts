@@ -9,7 +9,6 @@
 
 import type { ClientInterface, Session as SessionInterface } from "../index.web";
 import {
-    Client,
     ClientBuilder,
     type ClientBuilderInterface,
     SlidingSyncVersionBuilder,
@@ -20,44 +19,25 @@ import {
 
 interface BaseBuilderOptions {
     setupEncryption?: boolean;
-    slidingSync?: "discover" | "proxy" | "none" | "restored";
-    passphrase?: string;
-    storeName?: string; // Allow custom store name
-}
-
-/**
- * Creates an authentication client for login flows
-}
-
-import {
-    ClientBuilder,
-    SlidingSyncVersionBuilder,
-    IndexedDbStoreBuilder,
-} from "../index.web";
-
-export interface BaseBuilderOptions {
-    setupEncryption?: boolean;
     slidingSync: "discover" | "restored";
+    passphrase?: string;
+    storeName?: string;
 }
 
 /**
  * Create a base client builder with common configuration
  * This mirrors the Element X iOS baseBuilder pattern
  */
-export function createBaseClientBuilder(
-    options: BaseBuilderOptions = { setupEncryption: true, slidingSync: "discover" },
+function createBaseClientBuilder(
+    options: BaseBuilderOptions,
 ): ClientBuilderInterface {
-    console.log(`createBaseClientBuilder called with:`, options);
     let builder: ClientBuilderInterface = new ClientBuilder();
 
     // Add sliding sync configuration
     if (options.slidingSync === "discover") {
-        console.log("Configuring sliding sync: DiscoverNative");
         builder = builder.slidingSyncVersionBuilder(
             SlidingSyncVersionBuilder.DiscoverNative,
         );
-    } else if (options.slidingSync === "restored") {
-        console.log("Sliding sync configuration skipped for restored session");
     }
     // Note: for "restored", we don't add slidingSyncVersionBuilder
     // as it will be configured when restoring the session
@@ -87,7 +67,7 @@ export function createBaseClientBuilder(
  * Generates a random passphrase for IndexedDB encryption
  * Similar to encryptionKeyProvider.generateKey() in element-x-ios
  */
-export function generatePassphrase(): string {
+function generatePassphrase(): string {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
     return btoa(String.fromCharCode(...array));
@@ -97,7 +77,7 @@ export function generatePassphrase(): string {
  * Generates a unique store ID using UUID
  * Similar to iOS's SessionDirectories init() which uses UUID().uuidString
  */
-export function generateStoreId(): string {
+function generateStoreId(): string {
     return crypto.randomUUID();
 }
 
@@ -127,24 +107,13 @@ export async function createAuthenticationClient(
     const client = await createBaseClientBuilder({
         passphrase,
         setupEncryption: true,
-        slidingSync: "discover", // Discover native sliding sync during auth
-        storeName
+        slidingSync: "discover",
+        storeName,
     })
         .serverNameOrHomeserverUrl(serverNameOrUrl)
         .build();
 
     return { client, passphrase, storeId };
-}
-
-/**
- * Validates that the client is using native sliding sync
- * Throws an error if not, as we only support native sliding sync
- */
-export function validateNativeSlidingSync(client: ClientInterface): void {
-    const version = client.slidingSyncVersion();
-    if (version !== SlidingSyncVersion.Native) {
-        throw new Error("This homeserver does not support native sliding sync. Please contact your homeserver administrator.");
-    }
 }
 
 /**
@@ -170,7 +139,7 @@ export async function restoreClient(
     // See: RestorationToken.swift - slidingSyncVersion: .native
     const sessionWithSlidingSync = {
         ...session,
-        slidingSyncVersion: SlidingSyncVersion.Native
+        slidingSyncVersion: SlidingSyncVersion.Native,
     };
 
     // Use the same store name that was created during authentication
@@ -178,7 +147,7 @@ export async function restoreClient(
     console.log(`[restoreClient] - storeName: ${storeName}`);
 
     const builder: ClientBuilderInterface = createBaseClientBuilder({
-        slidingSync: "restored", // Don't discover - session already has sliding sync version
+        slidingSync: "restored",
         passphrase,
         setupEncryption: true,
         storeName,
@@ -195,35 +164,14 @@ export async function restoreClient(
 }
 
 /**
- * Create an authentication client (for login, no encrypted storage yet)
- * This is used during the login flow before we have a recovery key
+ * Validates that the client is using native sliding sync
+ * Throws an error if not, as we only support native sliding sync
  */
-export async function createAuthClient(homeserverUrl: string) {
-    return await createBaseClientBuilder({
-        setupEncryption: true,
-        slidingSync: "discover",
-    })
-        .homeserverUrl(homeserverUrl)
-        .build();
-}
-
-/**
- * Create a client for session restoration with encrypted storage
- * This is used when restoring a saved session with a passphrase (recovery key)
- */
-export async function createRestorationClient(
-    homeserverUrl: string,
-    userId: string,
-    passphrase: string,
-) {
-    return await createBaseClientBuilder({
-        setupEncryption: true,
-        slidingSync: "restored",
-    })
-        .homeserverUrl(homeserverUrl)
-        .username(userId)
-        .indexeddbStore(
-            new IndexedDbStoreBuilder("aurora-store").passphrase(passphrase),
-        )
-        .build();
+export function validateNativeSlidingSync(client: ClientInterface): void {
+    const version = client.slidingSyncVersion();
+    if (version !== SlidingSyncVersion.Native) {
+        throw new Error(
+            "This homeserver does not support native sliding sync. Please contact your homeserver administrator.",
+        );
+    }
 }

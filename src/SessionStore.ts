@@ -79,11 +79,11 @@ export class SessionStore {
 
         // If no storeId provided, use the existing one or generate a new one
         const finalStoreId =
-            storeId ?? sessions[session.userId]?.storeId ?? this.generateStoreId();
+            storeId ??
+            sessions[session.userId]?.storeId ??
+            this.generateStoreId();
 
         console.log(`[SessionStore] Saving session for ${session.userId}`);
-        console.log(`[SessionStore] - passphrase: ${finalPassphrase}`);
-        console.log(`[SessionStore] - storeId: ${finalStoreId}`);
 
         sessions[session.userId] = {
             session,
@@ -132,13 +132,18 @@ export class SessionStore {
             };
 
             request.onerror = () => {
-                console.error(`Failed to delete store: ${storeName}`, request.error);
+                console.error(
+                    `Failed to delete store: ${storeName}`,
+                    request.error,
+                );
                 // Don't reject - we still want to clear the session even if DB deletion fails
                 resolve();
             };
 
             request.onblocked = () => {
-                console.warn(`Deletion blocked for store: ${storeName}. Close all tabs and try again.`);
+                console.warn(
+                    `Deletion blocked for store: ${storeName}. Close all tabs and try again.`,
+                );
                 // Don't reject - we still want to clear the session
                 resolve();
             };
