@@ -7,7 +7,7 @@
  *
  */
 
-import { Button } from "@vector-im/compound-web";
+import { Button, InlineSpinner } from "@vector-im/compound-web";
 import { useViewModel } from "@element-hq/web-shared-components";
 import type React from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
@@ -21,7 +21,7 @@ export interface ResetIdentityWarningScreenProps {
 export const ResetIdentityWarningScreen: React.FC<
     ResetIdentityWarningScreenProps
 > = ({ encryptionViewModel }) => {
-    const { error } = useViewModel(encryptionViewModel);
+    const { error, isResetting } = useViewModel(encryptionViewModel);
 
     const handleConfirm = async () => {
         try {
@@ -170,11 +170,26 @@ export const ResetIdentityWarningScreen: React.FC<
                 </p>
             )}
 
+            {isResetting && (
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "var(--cpd-space-2x)",
+                    }}
+                >
+                    <InlineSpinner />
+                    <span style={{ fontSize: "14px" }}>Preparing reset...</span>
+                </div>
+            )}
+
             <Button
                 kind="primary"
                 size="lg"
                 destructive={true}
                 onClick={handleConfirm}
+                disabled={isResetting}
             >
                 Continue Reset
             </Button>

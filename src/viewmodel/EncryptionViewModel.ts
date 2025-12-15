@@ -20,7 +20,10 @@ import type {
 } from "../index.web.ts";
 import { printRustError } from "../utils";
 import type { EncryptionViewSnapshot } from "./encryption-view.types";
-import { EncryptionFlow, IdentityConfirmationAction } from "./encryption-view.types";
+import {
+    EncryptionFlow,
+    IdentityConfirmationAction,
+} from "./encryption-view.types";
 
 export interface EncryptionViewActions {
     enableRecovery(): Promise<void>;
@@ -48,6 +51,7 @@ export class EncryptionViewModel
     private encryption: EncryptionInterface;
     private recoveryStateListener?: TaskHandleInterface;
     private backupStateListener?: TaskHandleInterface;
+    private isResettingIdentity: boolean = false;
 
     public constructor(props: EncryptionViewModelProps) {
         const encryption = props.client.encryption();
@@ -64,6 +68,7 @@ export class EncryptionViewModel
             error: undefined,
             canGoBack: false,
             isVerifying: false,
+            isResetting: false,
         });
 
         this.encryption = encryption;
@@ -93,17 +98,35 @@ export class EncryptionViewModel
         if (snapshot.flow === EncryptionFlow.EnablingRecovery) {
             return; // Keep showing progress
         }
-        
-        // Don't auto-update flow if we're in reset warning or setup recovery after reset
-        // This prevents race conditions with state listeners
-        if (snapshot.flow === EncryptionFlow.ResetIdentityWarning || 
-            snapshot.flow === EncryptionFlow.SetupRecovery) {
-            return; // Don't override these states
+
+        // Don't override manual navigation screens (user explicitly navigated here)
+        // These screens are pushed by user actions, not state changes
+        if (
+            snapshot.flow === EncryptionFlow.ResetIdentityWarning ||
+            snapshot.flow === EncryptionFlow.EnterRecoveryKey
+        ) {
+            // Exception: If we're on reset warning and recovery becomes disabled,
+            // that means reset completed - but ONLY if we're not actively resetting
+            if (
+                snapshot.flow === EncryptionFlow.ResetIdentityWarning &&
+                snapshot.recoveryState === 2 &&
+                !this.isResettingIdentity
+            ) {
+                // Reset completed, recovery is disabled, show setup
+                this.snapshot.merge({
+                    flow: EncryptionFlow.SetupRecovery,
+                    canGoBack: false,
+                });
+                return;
+            }
+            return; // Otherwise don't override
         }
 
         // Still checking initial state
-        if (snapshot.backupExistsOnServer === undefined ||
-            snapshot.hasDevicesToVerifyAgainst === undefined) {
+        if (
+            snapshot.backupExistsOnServer === undefined ||
+            snapshot.hasDevicesToVerifyAgainst === undefined
+        ) {
             this.snapshot.merge({
                 flow: EncryptionFlow.Loading,
                 canGoBack: false,
@@ -113,12 +136,14 @@ export class EncryptionViewModel
 
         // Compute available actions for ConfirmIdentity screen
         const availableActions: IdentityConfirmationAction[] = [];
-        
+
         // Show "Use another device" if user has devices to verify against
         if (snapshot.hasDevicesToVerifyAgainst) {
-            availableActions.push(IdentityConfirmationAction.InteractiveVerification);
+            availableActions.push(
+                IdentityConfirmationAction.InteractiveVerification,
+            );
         }
-        
+
         // Show "Use recovery key" if recovery is enabled or incomplete
         // RecoveryState: Unknown=0, Enabled=1, Disabled=2, Incomplete=3
         if (snapshot.recoveryState === 1 || snapshot.recoveryState === 3) {
@@ -177,12 +202,16 @@ export class EncryptionViewModel
      */
     private async checkHasDevicesToVerifyAgainst(): Promise<void> {
         try {
-            const hasDevices = await this.encryption.hasDevicesToVerifyAgainst();
+            const hasDevices =
+                await this.encryption.hasDevicesToVerifyAgainst();
             console.log("Has devices to verify against:", hasDevices);
             this.snapshot.merge({ hasDevicesToVerifyAgainst: hasDevices });
             this.updateFlow();
         } catch (e) {
-            printRustError("Failed to check if user has devices to verify against", e);
+            printRustError(
+                "Failed to check if user has devices to verify against",
+                e,
+            );
             // Default to false if we can't check
             this.snapshot.merge({ hasDevicesToVerifyAgainst: false });
             this.updateFlow();
@@ -383,39 +412,109 @@ export class EncryptionViewModel
     public async confirmReset(): Promise<void> {
         this.snapshot.merge({
             error: undefined,
+            isResetting: true,
         });
+
+        // Set flag to prevent updateFlow from transitioning during reset
+        this.isResettingIdentity = true;
 
         try {
             console.log("Resetting identity...");
             const handle = await this.encryption.resetIdentity();
-            
+
             if (!handle) {
-                console.log("No reset handle returned - identity reset may not be needed");
+                console.log(
+                    "No reset handle returned - reset completed without auth",
+                );
+                // State listeners will handle navigation
                 return;
             }
-            
-            // Check auth type to see if UIA is required
+
+            // Check auth type
             const authType = handle.authType();
             console.log("Reset auth type:", authType);
-            
-            // Call reset with undefined auth (no UIA for now)
-            // TODO: Handle UIA if required (show password prompt based on authType)
+
+            // Handle different auth types
+            if (authType?.tag === "Oidc") {
+                // OIDC: Open approval URL in popup, wait for approval, then reset
+                const approvalUrl = authType.inner.info.approvalUrl;
+                console.log("OIDC reset - opening approval URL:", approvalUrl);
+
+                // Open in popup window (like OIDC login)
+                const width = 600;
+                const height = 900;
+                const left = window.screenX + (window.outerWidth - width) / 2;
+                const top = window.screenY + (window.outerHeight - height) / 2;
+
+                const popup = window.open(
+                    approvalUrl,
+                    "oidc-reset-approval",
+                    `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`,
+                );
+
+                if (!popup) {
+                    this.snapshot.merge({
+                        error: "Failed to open popup window. Please allow popups for this site.",
+                        flow: EncryptionFlow.ResetIdentityWarning,
+                    });
+                    return;
+                }
+
+                // Show loading state
+                this.snapshot.merge({
+                    error: undefined,
+                });
+
+                // Call reset immediately - SDK will wait for authorization internally
+                // If user closes popup without authorizing, this will fail
+                console.log(
+                    "Calling reset - SDK will wait for OIDC authorization",
+                );
+                await handle.reset(undefined);
+
+                // If we get here, authorization succeeded
+                console.log("OIDC reset complete");
+                popup.close(); // Close popup now that reset is complete
+
+                // Clear flag and transition to setup recovery
+                this.isResettingIdentity = false;
+                this.snapshot.merge({
+                    flow: EncryptionFlow.SetupRecovery,
+                    canGoBack: false,
+                    isResetting: false,
+                });
+                return;
+            }
+
+            if (authType?.tag === "Uiaa") {
+                // Password-based: Not yet implemented
+                this.snapshot.merge({
+                    error: "Password authentication is required but not yet implemented. Please use Element Web to reset your identity.",
+                    flow: EncryptionFlow.ConfirmIdentity,
+                    isResetting: false,
+                });
+                return;
+            }
+
+            // No auth required - proceed with reset
+            console.log("Resetting with no auth");
             await handle.reset(undefined);
-            
+
             console.log("Identity reset complete");
-            
-            // Re-check backup status after reset (it should be deleted now)
-            await this.checkBackupExistsOnServer();
-            
-            // After reset, we should set up recovery again
+
+            // Clear flag and manually transition to setup recovery
+            this.isResettingIdentity = false;
             this.snapshot.merge({
                 flow: EncryptionFlow.SetupRecovery,
                 canGoBack: false,
+                isResetting: false,
             });
         } catch (e) {
             printRustError("Failed to reset identity", e);
+            this.isResettingIdentity = false;
             this.snapshot.merge({
                 error: "Failed to reset identity. Please try again.",
+                isResetting: false,
             });
             throw e;
         }
@@ -492,7 +591,7 @@ export class EncryptionViewModel
                 canGoBack: false,
             });
         }
-        
+
         // From ResetIdentityWarning, go back to ConfirmIdentity
         if (snapshot.flow === EncryptionFlow.ResetIdentityWarning) {
             this.snapshot.merge({

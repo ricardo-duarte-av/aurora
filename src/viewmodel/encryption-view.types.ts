@@ -67,4 +67,6 @@ export interface EncryptionViewSnapshot {
     canGoBack: boolean;
     /** Whether we are currently verifying the recovery key */
     isVerifying: boolean;
+    /** Whether we are currently resetting identity */
+    isResetting: boolean;
 }

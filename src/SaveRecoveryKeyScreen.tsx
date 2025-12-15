@@ -10,7 +10,9 @@
 import { Button } from "@vector-im/compound-web";
 import { useViewModel } from "@element-hq/web-shared-components";
 import type React from "react";
+import { useState } from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
+import CheckIcon from "@vector-im/compound-design-tokens/assets/web/icons/check";
 
 export interface SaveRecoveryKeyScreenProps {
     encryptionViewModel: EncryptionViewModel;
@@ -20,10 +22,14 @@ export const SaveRecoveryKeyScreen: React.FC<SaveRecoveryKeyScreenProps> = ({
     encryptionViewModel,
 }) => {
     const { recoveryKey } = useViewModel(encryptionViewModel);
+    const [copied, setCopied] = useState(false);
 
-    const handleCopyRecoveryKey = () => {
+    const handleCopyRecoveryKey = async () => {
         if (recoveryKey) {
-            navigator.clipboard.writeText(recoveryKey);
+            await navigator.clipboard.writeText(recoveryKey);
+            setCopied(true);
+            // Reset after 2 seconds
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
@@ -69,10 +75,31 @@ export const SaveRecoveryKeyScreen: React.FC<SaveRecoveryKeyScreenProps> = ({
                     gap: "var(--cpd-space-2x)",
                 }}
             >
-                <Button kind="secondary" size="lg" onClick={handleCopyRecoveryKey}>
-                    Copy to Clipboard
+                <Button
+                    kind="secondary"
+                    size="lg"
+                    onClick={handleCopyRecoveryKey}
+                >
+                    {copied ? (
+                        <>
+                            <CheckIcon
+                                style={{
+                                    width: "20px",
+                                    height: "20px",
+                                    marginRight: "var(--cpd-space-1x)",
+                                }}
+                            />
+                            Copied!
+                        </>
+                    ) : (
+                        "Copy to Clipboard"
+                    )}
                 </Button>
-                <Button kind="primary" size="lg" onClick={handleDismissRecoveryKey}>
+                <Button
+                    kind="primary"
+                    size="lg"
+                    onClick={handleDismissRecoveryKey}
+                >
                     I've Saved It
                 </Button>
             </div>
