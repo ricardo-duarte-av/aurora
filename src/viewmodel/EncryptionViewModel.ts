@@ -14,6 +14,7 @@ import type {
     ClientInterface,
     EnableRecoveryProgressListener,
     EncryptionInterface,
+    IdentityResetHandleInterface,
     RecoveryState,
     RecoveryStateListener,
     TaskHandleInterface,
@@ -52,6 +53,7 @@ export class EncryptionViewModel
     private recoveryStateListener?: TaskHandleInterface;
     private backupStateListener?: TaskHandleInterface;
     private isResettingIdentity: boolean = false;
+    private identityResetHandle?: IdentityResetHandleInterface;
 
     public constructor(props: EncryptionViewModelProps) {
         const encryption = props.client.encryption();
@@ -171,9 +173,12 @@ export class EncryptionViewModel
             return;
         }
 
-        // No backup - need to set up recovery
+        // No backup on server - show ConfirmIdentity (matching iOS)
+        // User can choose to verify with another device or reset
+        // Only show SetupRecovery after explicit reset action
         this.snapshot.merge({
-            flow: EncryptionFlow.SetupRecovery,
+            flow: EncryptionFlow.ConfirmIdentity,
+            availableActions,
             canGoBack: false,
         });
     }
@@ -418,6 +423,8 @@ export class EncryptionViewModel
         // Set flag to prevent updateFlow from transitioning during reset
         this.isResettingIdentity = true;
 
+        let popup: Window | null = null;
+
         try {
             console.log("Resetting identity...");
             const handle = await this.encryption.resetIdentity();
@@ -426,9 +433,14 @@ export class EncryptionViewModel
                 console.log(
                     "No reset handle returned - reset completed without auth",
                 );
+                this.isResettingIdentity = false;
+                this.snapshot.merge({ isResetting: false });
                 // State listeners will handle navigation
                 return;
             }
+
+            // Store the handle for later use
+            this.identityResetHandle = handle;
 
             // Check auth type
             const authType = handle.authType();
@@ -446,37 +458,43 @@ export class EncryptionViewModel
                 const left = window.screenX + (window.outerWidth - width) / 2;
                 const top = window.screenY + (window.outerHeight - height) / 2;
 
-                const popup = window.open(
+                popup = window.open(
                     approvalUrl,
                     "oidc-reset-approval",
                     `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`,
                 );
 
                 if (!popup) {
+                    this.isResettingIdentity = false;
+                    this.identityResetHandle = undefined;
                     this.snapshot.merge({
                         error: "Failed to open popup window. Please allow popups for this site.",
                         flow: EncryptionFlow.ResetIdentityWarning,
+                        isResetting: false,
                     });
                     return;
                 }
 
-                // Show loading state
+                // Popup opened successfully - clear loading state
                 this.snapshot.merge({
-                    error: undefined,
+                    isResetting: false,
                 });
 
-                // Call reset immediately - SDK will wait for authorization internally
-                // If user closes popup without authorizing, this will fail
+                // Call reset - SDK will wait for OIDC authorization internally
+                // If user cancels or doesn't complete auth, this will throw
                 console.log(
                     "Calling reset - SDK will wait for OIDC authorization",
                 );
                 await handle.reset(undefined);
 
-                // If we get here, authorization succeeded
+                // Success! Close popup and transition to setup recovery
                 console.log("OIDC reset complete");
-                popup.close(); // Close popup now that reset is complete
+                if (popup && !popup.closed) {
+                    popup.close();
+                }
 
-                // Clear flag and transition to setup recovery
+                // Clear handle, flag and transition to setup recovery
+                this.identityResetHandle = undefined;
                 this.isResettingIdentity = false;
                 this.snapshot.merge({
                     flow: EncryptionFlow.SetupRecovery,
@@ -488,6 +506,7 @@ export class EncryptionViewModel
 
             if (authType?.tag === "Uiaa") {
                 // Password-based: Not yet implemented
+                this.isResettingIdentity = false;
                 this.snapshot.merge({
                     error: "Password authentication is required but not yet implemented. Please use Element Web to reset your identity.",
                     flow: EncryptionFlow.ConfirmIdentity,
@@ -511,12 +530,19 @@ export class EncryptionViewModel
             });
         } catch (e) {
             printRustError("Failed to reset identity", e);
+
+            // Close popup if still open
+            if (popup && !popup.closed) {
+                popup.close();
+            }
+
+            this.identityResetHandle = undefined;
             this.isResettingIdentity = false;
             this.snapshot.merge({
-                error: "Failed to reset identity. Please try again.",
+                error: "Reset cancelled or failed. Please try again.",
+                flow: EncryptionFlow.ResetIdentityWarning,
                 isResetting: false,
             });
-            throw e;
         }
     }
 
