@@ -27,6 +27,8 @@ export enum EncryptionFlow {
     SaveRecoveryKey = "save_recovery_key",
     /** Warning screen before resetting identity */
     ResetIdentityWarning = "reset_identity_warning",
+    /** Password entry for UIAA reset */
+    ResetIdentityPassword = "reset_identity_password",
     /** Recovery is complete and enabled */
     Complete = "complete",
 }

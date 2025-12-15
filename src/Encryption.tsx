@@ -27,6 +27,7 @@ import { EnablingRecoveryScreen } from "./EnablingRecoveryScreen";
 import { SaveRecoveryKeyScreen } from "./SaveRecoveryKeyScreen";
 import { RecoveryCompleteScreen } from "./RecoveryCompleteScreen";
 import { ResetIdentityWarningScreen } from "./ResetIdentityWarningScreen";
+import { ResetIdentityPasswordScreen } from "./ResetIdentityPasswordScreen";
 
 export interface EncryptionProps {
     encryptionViewModel: EncryptionViewModel;
@@ -91,6 +92,12 @@ export const Encryption: React.FC<EncryptionProps> = ({
                         encryptionViewModel={encryptionViewModel}
                     />
                 );
+            case EncryptionFlow.ResetIdentityPassword:
+                return (
+                    <ResetIdentityPasswordScreen
+                        encryptionViewModel={encryptionViewModel}
+                    />
+                );
             case EncryptionFlow.Complete:
                 return <RecoveryCompleteScreen />;
         }
@@ -106,6 +113,8 @@ export const Encryption: React.FC<EncryptionProps> = ({
                 return "Confirm your identity";
             case EncryptionFlow.ResetIdentityWarning:
                 return "Reset your identity?";
+            case EncryptionFlow.ResetIdentityPassword:
+                return "Enter your account password to continue";
             case EncryptionFlow.Complete:
                 return "Recovery Enabled";
             default:
@@ -117,6 +126,8 @@ export const Encryption: React.FC<EncryptionProps> = ({
         switch (flow) {
             case EncryptionFlow.EnterRecoveryKey:
                 return "Your key storage is currently out of sync.";
+            case EncryptionFlow.ResetIdentityPassword:
+                return "Confirm that you want to reset your identity.";
             case EncryptionFlow.Loading:
             case EncryptionFlow.SaveRecoveryKey:
             case EncryptionFlow.EnablingRecovery:

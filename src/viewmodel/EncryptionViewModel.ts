@@ -19,6 +19,7 @@ import type {
     RecoveryStateListener,
     TaskHandleInterface,
 } from "../index.web.ts";
+import { AuthData, AuthDataPasswordDetails } from "../index.web.ts";
 import { printRustError } from "../utils";
 import type { EncryptionViewSnapshot } from "./encryption-view.types";
 import {
@@ -32,6 +33,7 @@ export interface EncryptionViewActions {
     resetRecoveryKey(): Promise<void>;
     showResetWarning(): void;
     confirmReset(): Promise<void>;
+    confirmResetWithPassword(password: string): Promise<void>;
     cancelReset(): void;
     dismissRecoveryKey(): void;
     clearError(): void;
@@ -105,6 +107,7 @@ export class EncryptionViewModel
         // These screens are pushed by user actions, not state changes
         if (
             snapshot.flow === EncryptionFlow.ResetIdentityWarning ||
+            snapshot.flow === EncryptionFlow.ResetIdentityPassword ||
             snapshot.flow === EncryptionFlow.EnterRecoveryKey
         ) {
             // Exception: If we're on reset warning and recovery becomes disabled,
@@ -505,11 +508,11 @@ export class EncryptionViewModel
             }
 
             if (authType?.tag === "Uiaa") {
-                // Password-based: Not yet implemented
+                // Password-based: Navigate to password screen
                 this.isResettingIdentity = false;
                 this.snapshot.merge({
-                    error: "Password authentication is required but not yet implemented. Please use Element Web to reset your identity.",
-                    flow: EncryptionFlow.ConfirmIdentity,
+                    flow: EncryptionFlow.ResetIdentityPassword,
+                    canGoBack: true,
                     isResetting: false,
                 });
                 return;
@@ -541,6 +544,64 @@ export class EncryptionViewModel
             this.snapshot.merge({
                 error: "Reset cancelled or failed. Please try again.",
                 flow: EncryptionFlow.ResetIdentityWarning,
+                isResetting: false,
+            });
+        }
+    }
+
+    /**
+     * Confirm reset with password (UIAA flow)
+     */
+    public async confirmResetWithPassword(password: string): Promise<void> {
+        const handle = this.identityResetHandle;
+        if (!handle) {
+            this.snapshot.merge({
+                error: "Reset session expired. Please try again.",
+            });
+            return;
+        }
+
+        this.snapshot.merge({
+            error: undefined,
+            isResetting: true,
+        });
+
+        // Set flag to prevent updateFlow from transitioning during reset
+        this.isResettingIdentity = true;
+
+        try {
+            // Get user ID from client
+            const userId = this.props.client.userId();
+            
+            // Create password auth data
+            const passwordDetails = AuthDataPasswordDetails.create({
+                identifier: userId,
+                password: password,
+            });
+            
+            const authData = AuthData.Password.new({ passwordDetails });
+
+            console.log("Resetting with password authentication");
+            await handle.reset(authData);
+
+            console.log("Password-based reset complete");
+
+            // Clear handle, flag and transition to setup recovery
+            this.identityResetHandle = undefined;
+            this.isResettingIdentity = false;
+            this.snapshot.merge({
+                flow: EncryptionFlow.SetupRecovery,
+                canGoBack: false,
+                isResetting: false,
+            });
+        } catch (e) {
+            printRustError("Failed to reset identity with password", e);
+            
+            this.identityResetHandle = undefined;
+            this.isResettingIdentity = false;
+            this.snapshot.merge({
+                error: "Invalid password or reset failed. Please try again.",
+                flow: EncryptionFlow.ResetIdentityPassword,
                 isResetting: false,
             });
         }
@@ -624,6 +685,15 @@ export class EncryptionViewModel
                 flow: EncryptionFlow.ConfirmIdentity,
                 error: undefined,
                 canGoBack: false,
+            });
+        }
+
+        // From ResetIdentityPassword, go back to ResetIdentityWarning
+        if (snapshot.flow === EncryptionFlow.ResetIdentityPassword) {
+            this.snapshot.merge({
+                flow: EncryptionFlow.ResetIdentityWarning,
+                error: undefined,
+                canGoBack: true,
             });
         }
     }
