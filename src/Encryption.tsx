@@ -26,6 +26,7 @@ import { SetupRecoveryScreen } from "./SetupRecoveryScreen";
 import { EnablingRecoveryScreen } from "./EnablingRecoveryScreen";
 import { SaveRecoveryKeyScreen } from "./SaveRecoveryKeyScreen";
 import { RecoveryCompleteScreen } from "./RecoveryCompleteScreen";
+import { ResetIdentityWarningScreen } from "./ResetIdentityWarningScreen";
 
 export interface EncryptionProps {
     encryptionViewModel: EncryptionViewModel;
@@ -84,6 +85,12 @@ export const Encryption: React.FC<EncryptionProps> = ({
                         encryptionViewModel={encryptionViewModel}
                     />
                 );
+            case EncryptionFlow.ResetIdentityWarning:
+                return (
+                    <ResetIdentityWarningScreen
+                        encryptionViewModel={encryptionViewModel}
+                    />
+                );
             case EncryptionFlow.Complete:
                 return <RecoveryCompleteScreen />;
         }
@@ -97,6 +104,8 @@ export const Encryption: React.FC<EncryptionProps> = ({
                 return "Enter recovery key";
             case EncryptionFlow.ConfirmIdentity:
                 return "Confirm your identity";
+            case EncryptionFlow.ResetIdentityWarning:
+                return "Reset your identity?";
             case EncryptionFlow.Complete:
                 return "Recovery Enabled";
             default:

@@ -53,11 +53,12 @@ function createBaseClientBuilder(
 
     // Add encryption configuration if requested
     if (options.setupEncryption) {
-        builder = builder.autoEnableBackups(true);
         builder = builder.autoEnableCrossSigning(true);
         builder = builder.backupDownloadStrategy(
             BackupDownloadStrategy.AfterDecryptionFailure,
         );
+        // Note: We don't use autoEnableBackups(true) because we want to manually
+        // set up recovery and capture the recovery key to use as the IndexedDB passphrase
     }
 
     return builder;

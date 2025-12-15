@@ -25,6 +25,8 @@ export enum EncryptionFlow {
     EnablingRecovery = "enabling_recovery",
     /** Recovery key was just created and needs to be saved */
     SaveRecoveryKey = "save_recovery_key",
+    /** Warning screen before resetting identity */
+    ResetIdentityWarning = "reset_identity_warning",
     /** Recovery is complete and enabled */
     Complete = "complete",
 }
@@ -32,6 +34,16 @@ export enum EncryptionFlow {
 /**
  * Snapshot of encryption view state
  */
+/**
+ * Available actions on the Confirm Identity screen
+ */
+export enum IdentityConfirmationAction {
+    /** Use recovery key to verify */
+    Recovery = "recovery",
+    /** Use another device for interactive verification */
+    InteractiveVerification = "interactive_verification",
+}
+
 export interface EncryptionViewSnapshot {
     /** Current flow step */
     flow: EncryptionFlow;
@@ -41,6 +53,10 @@ export interface EncryptionViewSnapshot {
     backupState: BackupState | undefined;
     /** Whether a backup exists on the server */
     backupExistsOnServer: boolean | undefined;
+    /** Whether the user has other devices they can verify against */
+    hasDevicesToVerifyAgainst: boolean | undefined;
+    /** Available actions for identity confirmation */
+    availableActions: IdentityConfirmationAction[] | undefined;
     /** Progress message while enabling recovery */
     enableRecoveryProgress: string;
     /** Recovery key that was just generated (needs to be saved) */

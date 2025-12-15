@@ -20,12 +20,15 @@ import type {
 } from "../index.web.ts";
 import { printRustError } from "../utils";
 import type { EncryptionViewSnapshot } from "./encryption-view.types";
-import { EncryptionFlow } from "./encryption-view.types";
+import { EncryptionFlow, IdentityConfirmationAction } from "./encryption-view.types";
 
 export interface EncryptionViewActions {
     enableRecovery(): Promise<void>;
     recover(recoveryKey: string): Promise<void>;
     resetRecoveryKey(): Promise<void>;
+    showResetWarning(): void;
+    confirmReset(): Promise<void>;
+    cancelReset(): void;
     dismissRecoveryKey(): void;
     clearError(): void;
     useRecoveryKey(): void;
@@ -54,6 +57,8 @@ export class EncryptionViewModel
             recoveryState: encryption.recoveryState(),
             backupState: encryption.backupState(),
             backupExistsOnServer: undefined, // Will be checked asynchronously
+            hasDevicesToVerifyAgainst: undefined, // Will be checked asynchronously
+            availableActions: undefined, // Will be computed after checks
             enableRecoveryProgress: "",
             recoveryKey: undefined,
             error: undefined,
@@ -64,11 +69,13 @@ export class EncryptionViewModel
         this.encryption = encryption;
         this.setupListeners();
         this.checkBackupExistsOnServer();
+        this.checkHasDevicesToVerifyAgainst();
         this.updateFlow();
     }
 
     /**
      * Update the flow based on current state
+     * Following iOS logic: show ConfirmIdentity when recovery enabled/incomplete
      */
     private updateFlow(): void {
         const snapshot = this.getSnapshot();
@@ -86,19 +93,17 @@ export class EncryptionViewModel
         if (snapshot.flow === EncryptionFlow.EnablingRecovery) {
             return; // Keep showing progress
         }
-
-        // If recovery is enabled, we're complete
-        if (snapshot.recoveryState === 2) {
-            // RecoveryState.Enabled
-            this.snapshot.merge({
-                flow: EncryptionFlow.Complete,
-                canGoBack: false,
-            });
-            return;
+        
+        // Don't auto-update flow if we're in reset warning or setup recovery after reset
+        // This prevents race conditions with state listeners
+        if (snapshot.flow === EncryptionFlow.ResetIdentityWarning || 
+            snapshot.flow === EncryptionFlow.SetupRecovery) {
+            return; // Don't override these states
         }
 
-        // Still checking backup status
-        if (snapshot.backupExistsOnServer === undefined) {
+        // Still checking initial state
+        if (snapshot.backupExistsOnServer === undefined ||
+            snapshot.hasDevicesToVerifyAgainst === undefined) {
             this.snapshot.merge({
                 flow: EncryptionFlow.Loading,
                 canGoBack: false,
@@ -106,20 +111,36 @@ export class EncryptionViewModel
             return;
         }
 
-        // Recovery is incomplete - show confirm identity
-        if (snapshot.recoveryState === 1) {
-            // RecoveryState.Incomplete
+        // Compute available actions for ConfirmIdentity screen
+        const availableActions: IdentityConfirmationAction[] = [];
+        
+        // Show "Use another device" if user has devices to verify against
+        if (snapshot.hasDevicesToVerifyAgainst) {
+            availableActions.push(IdentityConfirmationAction.InteractiveVerification);
+        }
+        
+        // Show "Use recovery key" if recovery is enabled or incomplete
+        // RecoveryState: Unknown=0, Enabled=1, Disabled=2, Incomplete=3
+        if (snapshot.recoveryState === 1 || snapshot.recoveryState === 3) {
+            availableActions.push(IdentityConfirmationAction.Recovery);
+        }
+
+        // If recovery is enabled or incomplete, show ConfirmIdentity (like iOS)
+        // This is the key fix: don't show Complete screen automatically
+        if (snapshot.recoveryState === 1 || snapshot.recoveryState === 3) {
             this.snapshot.merge({
                 flow: EncryptionFlow.ConfirmIdentity,
+                availableActions,
                 canGoBack: false,
             });
             return;
         }
 
-        // Backup exists but no recovery - show confirm identity
+        // Backup exists but recovery is disabled - show confirm identity
         if (snapshot.backupExistsOnServer) {
             this.snapshot.merge({
                 flow: EncryptionFlow.ConfirmIdentity,
+                availableActions,
                 canGoBack: false,
             });
             return;
@@ -146,6 +167,24 @@ export class EncryptionViewModel
             printRustError("Failed to check if backup exists on server", e);
             // Default to false if we can't check
             this.snapshot.merge({ backupExistsOnServer: false });
+            this.updateFlow();
+        }
+    }
+
+    /**
+     * Check if the user has other devices they can verify against
+     * This determines if we show "Use another device" option
+     */
+    private async checkHasDevicesToVerifyAgainst(): Promise<void> {
+        try {
+            const hasDevices = await this.encryption.hasDevicesToVerifyAgainst();
+            console.log("Has devices to verify against:", hasDevices);
+            this.snapshot.merge({ hasDevicesToVerifyAgainst: hasDevices });
+            this.updateFlow();
+        } catch (e) {
+            printRustError("Failed to check if user has devices to verify against", e);
+            // Default to false if we can't check
+            this.snapshot.merge({ hasDevicesToVerifyAgainst: false });
             this.updateFlow();
         }
     }
@@ -244,10 +283,8 @@ export class EncryptionViewModel
                                 flow: EncryptionFlow.SaveRecoveryKey,
                             });
 
-                            // Notify that recovery is enabled (if callback provided)
-                            if (this.props.onRecoveryEnabled) {
-                                this.props.onRecoveryEnabled(inner.recoveryKey);
-                            }
+                            // Don't call onRecoveryEnabled here - wait for user to dismiss the key
+                            // The callback will be triggered in dismissRecoveryKey()
                             break;
                         }
                     }
@@ -329,20 +366,85 @@ export class EncryptionViewModel
     }
 
     /**
+     * Show the reset identity warning screen
+     */
+    public showResetWarning(): void {
+        this.snapshot.merge({
+            flow: EncryptionFlow.ResetIdentityWarning,
+            canGoBack: true,
+            error: undefined,
+        });
+    }
+
+    /**
+     * Confirm and proceed with identity reset
+     * This resets cross-signing keys, deletes existing backup and recovery key
+     */
+    public async confirmReset(): Promise<void> {
+        this.snapshot.merge({
+            error: undefined,
+        });
+
+        try {
+            console.log("Resetting identity...");
+            const handle = await this.encryption.resetIdentity();
+            
+            if (!handle) {
+                console.log("No reset handle returned - identity reset may not be needed");
+                return;
+            }
+            
+            // Check auth type to see if UIA is required
+            const authType = handle.authType();
+            console.log("Reset auth type:", authType);
+            
+            // Call reset with undefined auth (no UIA for now)
+            // TODO: Handle UIA if required (show password prompt based on authType)
+            await handle.reset(undefined);
+            
+            console.log("Identity reset complete");
+            
+            // Re-check backup status after reset (it should be deleted now)
+            await this.checkBackupExistsOnServer();
+            
+            // After reset, we should set up recovery again
+            this.snapshot.merge({
+                flow: EncryptionFlow.SetupRecovery,
+                canGoBack: false,
+            });
+        } catch (e) {
+            printRustError("Failed to reset identity", e);
+            this.snapshot.merge({
+                error: "Failed to reset identity. Please try again.",
+            });
+            throw e;
+        }
+    }
+
+    /**
+     * Cancel the reset identity flow and go back
+     */
+    public cancelReset(): void {
+        this.snapshot.merge({
+            flow: EncryptionFlow.ConfirmIdentity,
+            canGoBack: false,
+            error: undefined,
+        });
+    }
+
+    /**
      * Dismiss the recovery key display (user has saved it)
-     * If a callback was provided, this will trigger it (e.g., to continue to the app)
+     * This triggers the callback to proceed to the app
      */
     public dismissRecoveryKey(): void {
         const currentRecoveryKey = this.getSnapshot().recoveryKey;
 
         this.snapshot.merge({
             recoveryKey: undefined,
+            flow: EncryptionFlow.Complete,
         });
 
-        // If this is during initial setup, trigger the callback again
-        // (it was already called when Done was received, but user might dismiss later)
-        // Note: The callback was already called with the key when Done was received
-        // so this second call is just to trigger the continue flow
+        // Now that user has dismissed the key, trigger the callback to proceed
         if (this.props.onRecoveryEnabled && currentRecoveryKey) {
             this.props.onRecoveryEnabled(currentRecoveryKey);
         }
@@ -387,6 +489,15 @@ export class EncryptionViewModel
                 flow: EncryptionFlow.ConfirmIdentity,
                 error: undefined, // Clear any errors when going back
                 isVerifying: false, // Reset verification state when going back
+                canGoBack: false,
+            });
+        }
+        
+        // From ResetIdentityWarning, go back to ConfirmIdentity
+        if (snapshot.flow === EncryptionFlow.ResetIdentityWarning) {
+            this.snapshot.merge({
+                flow: EncryptionFlow.ConfirmIdentity,
+                error: undefined,
                 canGoBack: false,
             });
         }

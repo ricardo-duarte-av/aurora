@@ -65,13 +65,14 @@ export const SaveRecoveryKeyScreen: React.FC<SaveRecoveryKeyScreenProps> = ({
             <div
                 style={{
                     display: "flex",
+                    flexDirection: "column",
                     gap: "var(--cpd-space-2x)",
                 }}
             >
-                <Button kind="secondary" onClick={handleCopyRecoveryKey}>
+                <Button kind="secondary" size="lg" onClick={handleCopyRecoveryKey}>
                     Copy to Clipboard
                 </Button>
-                <Button kind="primary" onClick={handleDismissRecoveryKey}>
+                <Button kind="primary" size="lg" onClick={handleDismissRecoveryKey}>
                     I've Saved It
                 </Button>
             </div>
