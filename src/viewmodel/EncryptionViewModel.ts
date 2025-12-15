@@ -19,7 +19,12 @@ import type {
     RecoveryStateListener,
     TaskHandleInterface,
 } from "../index.web.ts";
-import { AuthData, AuthDataPasswordDetails } from "../index.web.ts";
+import {
+    AuthData,
+    AuthDataPasswordDetails,
+    EnableRecoveryProgress,
+    EnableRecoveryProgress_Tags,
+} from "../index.web.ts";
 import { printRustError } from "../utils";
 import type { EncryptionViewSnapshot } from "./encryption-view.types";
 import {
@@ -54,7 +59,7 @@ export class EncryptionViewModel
     private encryption: EncryptionInterface;
     private recoveryStateListener?: TaskHandleInterface;
     private backupStateListener?: TaskHandleInterface;
-    private isResettingIdentity: boolean = false;
+    private isResettingIdentity = false;
     private identityResetHandle?: IdentityResetHandleInterface;
 
     public constructor(props: EncryptionViewModelProps) {
@@ -265,65 +270,50 @@ export class EncryptionViewModel
 
         try {
             const progressListener: EnableRecoveryProgressListener = {
-                onUpdate: (progress: unknown) => {
-                    const tag = (progress as { tag: string }).tag;
-
-                    switch (tag) {
-                        case "Starting":
+                onUpdate: (progress: EnableRecoveryProgress) => {
+                    switch (progress.tag) {
+                        case EnableRecoveryProgress_Tags.Starting:
                             this.snapshot.merge({
                                 enableRecoveryProgress: "Starting...",
                             });
                             break;
-                        case "CreatingBackup":
+                        case EnableRecoveryProgress_Tags.CreatingBackup:
                             this.snapshot.merge({
                                 enableRecoveryProgress: "Creating backup...",
                             });
                             break;
-                        case "CreatingRecoveryKey":
+                        case EnableRecoveryProgress_Tags.CreatingRecoveryKey:
                             this.snapshot.merge({
                                 enableRecoveryProgress:
                                     "Creating recovery key...",
                             });
                             break;
-                        case "BackingUp": {
-                            const inner = (
-                                progress as {
-                                    inner: {
-                                        backedUpCount: number;
-                                        totalCount: number;
-                                    };
-                                }
-                            ).inner;
+                        case EnableRecoveryProgress_Tags.BackingUp:
                             this.snapshot.merge({
-                                enableRecoveryProgress: `Backing up keys: ${inner.backedUpCount}/${inner.totalCount}`,
+                                enableRecoveryProgress: `Backing up keys: ${progress.inner.backedUpCount}/${progress.inner.totalCount}`,
                             });
                             break;
-                        }
-                        case "RoomKeyUploadError":
+                        case EnableRecoveryProgress_Tags.RoomKeyUploadError:
                             this.snapshot.merge({
                                 enableRecoveryProgress:
                                     "Error uploading room keys",
                                 error: "Failed to upload room keys",
                             });
                             break;
-                        case "Done": {
-                            const inner = (
-                                progress as { inner: { recoveryKey: string } }
-                            ).inner;
+                        case EnableRecoveryProgress_Tags.Done:
                             console.log(
                                 "Recovery setup complete! Recovery key:",
-                                inner.recoveryKey,
+                                progress.inner.recoveryKey,
                             );
                             this.snapshot.merge({
                                 enableRecoveryProgress: "Complete!",
-                                recoveryKey: inner.recoveryKey,
+                                recoveryKey: progress.inner.recoveryKey,
                                 flow: EncryptionFlow.SaveRecoveryKey,
                             });
 
                             // Don't call onRecoveryEnabled here - wait for user to dismiss the key
                             // The callback will be triggered in dismissRecoveryKey()
                             break;
-                        }
                     }
                 },
             };
@@ -453,7 +443,6 @@ export class EncryptionViewModel
             if (authType?.tag === "Oidc") {
                 // OIDC: Open approval URL in popup, wait for approval, then reset
                 const approvalUrl = authType.inner.info.approvalUrl;
-                console.log("OIDC reset - opening approval URL:", approvalUrl);
 
                 // Open in popup window (like OIDC login)
                 const width = 600;
@@ -485,13 +474,10 @@ export class EncryptionViewModel
 
                 // Call reset - SDK will wait for OIDC authorization internally
                 // If user cancels or doesn't complete auth, this will throw
-                console.log(
-                    "Calling reset - SDK will wait for OIDC authorization",
-                );
                 await handle.reset(undefined);
 
                 // Success! Close popup and transition to setup recovery
-                console.log("OIDC reset complete");
+                console.log("Reset complete");
                 if (popup && !popup.closed) {
                     popup.close();
                 }
@@ -572,19 +558,17 @@ export class EncryptionViewModel
         try {
             // Get user ID from client
             const userId = this.props.client.userId();
-            
+
             // Create password auth data
             const passwordDetails = AuthDataPasswordDetails.create({
                 identifier: userId,
                 password: password,
             });
-            
+
             const authData = AuthData.Password.new({ passwordDetails });
 
-            console.log("Resetting with password authentication");
             await handle.reset(authData);
-
-            console.log("Password-based reset complete");
+            console.log("Reset complete");
 
             // Clear handle, flag and transition to setup recovery
             this.identityResetHandle = undefined;
@@ -596,7 +580,7 @@ export class EncryptionViewModel
             });
         } catch (e) {
             printRustError("Failed to reset identity with password", e);
-            
+
             this.identityResetHandle = undefined;
             this.isResettingIdentity = false;
             this.snapshot.merge({
