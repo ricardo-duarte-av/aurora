@@ -94,21 +94,6 @@ export const OidcLoginScreen: React.FC<OidcLoginScreenProps> = ({
                 {loggingIn ? <InlineSpinner /> : "Continue with OIDC"}
             </Form.Submit>
 
-            {supportsPassword && (
-                <Button
-                    kind="secondary"
-                    size="lg"
-                    style={{
-                        width: "100%",
-                        marginTop: "var(--cpd-space-2x)",
-                    }}
-                    disabled={loggingIn}
-                    onClick={() => loginViewModel.usePasswordInstead()}
-                >
-                    Use password instead
-                </Button>
-            )}
-
             <Button
                 kind="tertiary"
                 size="sm"
