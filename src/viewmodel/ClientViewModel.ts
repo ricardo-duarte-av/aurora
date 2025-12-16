@@ -259,7 +259,15 @@ export class ClientViewModel
 
         const userId = this.client.userId();
         const displayName = await this.client.displayName();
-        const avatarUrl = await this.client.avatarUrl();
+
+        // avatarUrl has thrown in some cases, handle gracefully
+        let avatarUrl: string | undefined;
+        try {
+            avatarUrl = await this.client.avatarUrl();
+        } catch (e) {
+            console.log("No avatar URL available for user");
+            avatarUrl = undefined;
+        }
 
         this.snapshot.merge({
             clientState: ClientState.LoggedIn,
