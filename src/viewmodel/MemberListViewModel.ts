@@ -49,7 +49,7 @@ export class MemberListViewModel
     }
 
     private async run(searchQuery?: string): Promise<void> {
-        console.log("Running member list store", this.props.roomId);
+        console.log("Running member list store", this.props.room.id());
         const { joined: joinedSdk, invited: invitedSdk } =
             await this.loadMemberList(searchQuery);
 
@@ -91,14 +91,7 @@ export class MemberListViewModel
     private async loadMemberList(
         searchQuery?: string,
     ): Promise<Record<"joined" | "invited", RoomMember[]>> {
-        if (!this.props.client) {
-            return {
-                joined: [],
-                invited: [],
-            };
-        }
-
-        const members = await this.loadMembers(this.props.roomId);
+        const members = await this.loadMembers();
 
         // Filter then sort as it's more efficient than sorting tons of members we will just filter out later.
         // Also sort each group, as there's no point comparing invited/joined users when they aren't in the same list!
@@ -117,15 +110,8 @@ export class MemberListViewModel
         };
     }
 
-    private async loadMembers(roomId: string): Promise<RoomMember[]> {
-        if (!roomId) return [];
-        const room = this.props.client.getRoom(roomId);
-
-        if (!room) {
-            return [];
-        }
-
-        const members = await room.members();
+    private async loadMembers(): Promise<RoomMember[]> {
+        const members = await this.props.room.members();
         const allMembers: RoomMember[] = [];
 
         if (members.len()) {

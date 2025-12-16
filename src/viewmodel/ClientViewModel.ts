@@ -10,6 +10,7 @@
 import { BaseViewModel } from "@element-hq/web-shared-components";
 import { MemberListViewModel } from "./MemberListViewModel";
 import { TimelineViewModel } from "./TimelineViewModel";
+import { RoomViewModel } from "./RoomViewModel";
 import {
     ClientBuilder,
     type ClientInterface,
@@ -46,18 +47,17 @@ export class ClientViewModel
     private oidcAuthData?: OAuthAuthorizationDataInterface;
     private clientDelegateHandle?: TaskHandleInterface;
     private client?: ClientInterface;
+    private currentRoomId?: string;
 
     public constructor(props: Props) {
         super(props, {
             clientState: ClientState.Unknown,
-            timelineStore: undefined,
+            roomViewModel: undefined,
             roomListViewModel: undefined,
             loginViewModel: undefined,
-            memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
             avatarUrl: undefined,
-            currentRoomId: undefined,
         });
 
         // Create loginViewModel after super() call
@@ -219,13 +219,12 @@ export class ClientViewModel
 
         this.snapshot.set({
             clientState: ClientState.LoggedOut,
-            timelineStore: undefined,
+            roomViewModel: undefined,
             roomListViewModel: undefined,
-            memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
             avatarUrl: undefined,
-            currentRoomId: undefined,
+
             // Keep loginViewModel so we can log in again
             loginViewModel: this.initLoginViewModel(),
         });
@@ -490,32 +489,28 @@ export class ClientViewModel
         if (roomId === "") return;
 
         const snapshot = this.getSnapshot();
-        const currentTimeline = snapshot.timelineStore;
 
         // Check if we're already viewing this room
-        if (snapshot.currentRoomId === roomId) {
+        if (this.currentRoomId === roomId) {
             return;
         }
 
-        // Dispose the current timeline and member list
-        currentTimeline?.dispose();
-        snapshot.memberListStore?.dispose();
+        // Dispose the current room view model
+        snapshot.roomViewModel?.dispose();
 
         if (!this.client) return;
 
         const room = this.client.getRoom(roomId);
         if (!room) return;
 
-        const timelineStore = new TimelineViewModel({ room });
-        const memberListStore = new MemberListViewModel({
-            roomId,
-            client: this.client,
-        });
+        const roomViewModel = new RoomViewModel({ room });
+
+        this.currentRoomId = roomId;
 
         this.snapshot.merge({
-            timelineStore,
-            memberListStore,
-            currentRoomId: roomId,
+            roomViewModel,
         });
+
+        snapshot.roomListViewModel?.setActiveRoom(roomId);
     }
 }

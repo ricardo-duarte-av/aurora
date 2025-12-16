@@ -9,7 +9,7 @@
 
 import type { ListRange } from "react-virtuoso";
 import type { SupportedFilters } from "../Filter";
-import type { RoomListItemViewModel } from "./RoomListItemViewModel";
+import type { RoomItemViewModel } from "./RoomListItemViewModel";
 import type {
     RoomListLoadingState,
     RoomListServiceInterface,
@@ -35,7 +35,7 @@ export interface FilterInfo {
  */
 export interface RoomListViewSnapshot {
     /** List of room list items */
-    rooms: Array<RoomListItemViewModel>;
+    rooms: Array<RoomItemViewModel>;
 
     /** Total number of rooms available */
     numRooms: number;
@@ -51,6 +51,9 @@ export interface RoomListViewSnapshot {
 
     /** Whether more rooms can be loaded via pagination */
     canLoadMore: boolean;
+
+    /** Currently active room ID */
+    currentRoomId?: string;
 }
 
 /**

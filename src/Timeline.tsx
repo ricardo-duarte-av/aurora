@@ -3,21 +3,18 @@ import { type ReactNode, useRef, useState } from "react";
 import { useViewModel } from "@element-hq/web-shared-components";
 import { EventTile } from "./EventTile";
 import {
-    TimelineViewModel,
-    isVirtualEvent,
+    type TimelineViewModel,
     TimelineItem,
 } from "./viewmodel/TimelineViewModel";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { InlineSpinner } from "@vector-im/compound-web";
 
 export interface TimelineProps {
-    currentRoomId: string;
-    timelineStore: TimelineViewModel;
+    timelineViewModel: TimelineViewModel;
 }
 
 export const Timeline: React.FC<TimelineProps> = ({
-    currentRoomId,
-    timelineStore: timeline,
+    timelineViewModel: timeline,
 }) => {
     const viewState = useViewModel(timeline);
     const virtuosoRef = useRef<VirtuosoHandle | null>(null);
@@ -30,7 +27,7 @@ export const Timeline: React.FC<TimelineProps> = ({
             <ol>
                 <Virtuoso
                     ref={virtuosoRef}
-                    key={currentRoomId}
+                    key={viewState.roomId}
                     data={items}
                     firstItemIndex={viewState.firstItemIndex}
                     alignToBottom={true}

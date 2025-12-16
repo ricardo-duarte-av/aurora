@@ -25,7 +25,7 @@ function mxcToUrl(mxcUrl: string): string {
     )}?width=48&height=48`;
 }
 
-export class RoomListItemViewModel extends BaseViewModel<
+export class RoomItemViewModel extends BaseViewModel<
     RoomListItemViewSnapshot,
     Props
 > {

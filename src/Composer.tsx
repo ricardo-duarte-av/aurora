@@ -3,10 +3,10 @@ import { useState } from "react";
 import type { TimelineViewModel } from "./viewmodel/TimelineViewModel";
 
 export interface ComposerProps {
-    timelineStore: TimelineViewModel;
+    timelineViewModel: TimelineViewModel;
 }
 
-export const Composer: React.FC<ComposerProps> = ({ timelineStore }) => {
+export const Composer: React.FC<ComposerProps> = ({ timelineViewModel }) => {
     const [composer, setComposer] = useState("");
 
     return (
@@ -20,7 +20,7 @@ export const Composer: React.FC<ComposerProps> = ({ timelineStore }) => {
                     onChange={(e) => setComposer(e.currentTarget.value)}
                     onKeyDown={(e) => {
                         if (e.key === "Enter" && composer) {
-                            timelineStore.sendMessage(composer);
+                            timelineViewModel.sendMessage(composer);
                             setComposer("");
                             e.preventDefault();
                         }
@@ -30,7 +30,7 @@ export const Composer: React.FC<ComposerProps> = ({ timelineStore }) => {
                     id="mx_Composer_send"
                     onClick={() => {
                         if (composer) {
-                            timelineStore.sendMessage(composer);
+                            timelineViewModel.sendMessage(composer);
                             setComposer("");
                         }
                     }}

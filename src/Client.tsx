@@ -9,6 +9,7 @@ import { RoomListFiltersView } from "./RoomListFiltersView";
 import { RoomListHeaderView } from "./RoomListHeaderView";
 import { RoomListView } from "./RoomListView";
 import { RoomSearchView } from "./RoomSearchView";
+import { RoomView } from "./RoomView";
 import { SidePanelView } from "./SidePanelView.tsx";
 import { SplashView } from "./SplashView.tsx";
 import { Timeline } from "./Timeline.tsx";
@@ -22,25 +23,17 @@ interface ClientProps {
 
 export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
     const [clientViewModel] = useClientStoreContext();
-    const { roomListViewModel, timelineStore, memberListStore, currentRoomId } =
-        useViewModel(clientViewModel);
+    const { roomListViewModel, roomViewModel } = useViewModel(clientViewModel);
 
     // Handle room changes
     const handleRoomSelected = (roomId: string) => {
         clientViewModel.setCurrentRoom(roomId);
     };
 
-    // Update active room in room list view model
-    useEffect(() => {
-        if (roomListViewModel && currentRoomId) {
-            roomListViewModel.setActiveRoom(currentRoomId);
-        }
-    }, [roomListViewModel, currentRoomId]);
-
     if (!roomListViewModel) return null;
 
     console.log(
-        `roomListViewModel: ${roomListViewModel}, timelineStore: ${timelineStore}, memberListStore: ${memberListStore}, currentRoomId: ${currentRoomId}`,
+        `roomListViewModel: ${roomListViewModel}, roomViewModel: ${roomViewModel}`,
     );
 
     return (
@@ -61,27 +54,13 @@ export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
                             <RoomListFiltersView vm={roomListViewModel} />
                             <RoomListView
                                 vm={roomListViewModel}
-                                currentRoomId={currentRoomId ?? ""}
                                 onRoomSelected={handleRoomSelected}
                             />
                         </>
                     }
                 </nav>
-                {timelineStore && memberListStore ? (
-                    <>
-                        <main className="mx_MainPanel">
-                            <RoomHeaderView
-                                vm={roomListViewModel}
-                                currentRoomId={currentRoomId ?? ""}
-                            />
-                            <Timeline
-                                timelineStore={timelineStore}
-                                currentRoomId={currentRoomId ?? ""}
-                            />
-                            <Composer timelineStore={timelineStore} />
-                        </main>
-                        <MemberListView vm={memberListStore} />
-                    </>
+                {roomViewModel ? (
+                    <RoomView roomViewModel={roomViewModel} />
                 ) : (
                     <SplashView />
                 )}
