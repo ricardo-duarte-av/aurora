@@ -61,14 +61,16 @@ export class ClientViewModel
         });
 
         // Create loginViewModel after super() call
-        this.snapshot.merge({
-            loginViewModel: new LoginViewModel({
-                onLogin: this.login.bind(this),
-                onCheckHomeserver: this.checkHomeserverCapabilities.bind(this),
-                onGetOidcAuthUrl: this.getOidcAuthUrl.bind(this),
-                onLoginWithOidcCallback: this.loginWithOidcCallback.bind(this),
-                onAbortOidcLogin: this.abortOidcLogin.bind(this),
-            }),
+        this.snapshot.merge({ loginViewModel: this.initLoginViewModel() });
+    }
+
+    private initLoginViewModel(): LoginViewModel {
+        return new LoginViewModel({
+            onLogin: this.login.bind(this),
+            onCheckHomeserver: this.checkHomeserverCapabilities.bind(this),
+            onGetOidcAuthUrl: this.getOidcAuthUrl.bind(this),
+            onLoginWithOidcCallback: this.loginWithOidcCallback.bind(this),
+            onAbortOidcLogin: this.abortOidcLogin.bind(this),
         });
     }
 
@@ -225,7 +227,7 @@ export class ClientViewModel
             avatarUrl: undefined,
             currentRoomId: undefined,
             // Keep loginViewModel so we can log in again
-            loginViewModel: this.getSnapshot().loginViewModel,
+            loginViewModel: this.initLoginViewModel(),
         });
     }
 
@@ -286,10 +288,7 @@ export class ClientViewModel
         this.getSnapshot().loginViewModel?.setLoggingIn(false);
     }
 
-    public async login({
-        username,
-        password,
-    }: LoginParams): Promise<void> {
+    public async login({ username, password }: LoginParams): Promise<void> {
         this.snapshot.merge({ clientState: ClientState.LoggingIn });
         this.getSnapshot().loginViewModel?.setLoggingIn(true);
 
