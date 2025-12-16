@@ -1,8 +1,11 @@
 import type { OidcConfiguration } from "./generated/matrix_sdk_ffi";
 
 export const getOidcConfiguration = (): OidcConfiguration => {
-    const redirectUri = `${window.location.origin}/oidc/callback`;
-    const clientUri = "https://element.io";
+    const currentOrigin = window.location.origin;
+    const redirectUri = `${currentOrigin}/oidc/callback`;
+    const clientUri = currentOrigin.includes("localhost")
+        ? "https://element.io"
+        : currentOrigin;
 
     return {
         clientName: "Aurora",
