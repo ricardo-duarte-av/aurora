@@ -7,9 +7,6 @@ export const getOidcConfiguration = (): OidcConfiguration => {
         ? "https://element.io"
         : currentOrigin;
 
-    console.log("OIDC Configuration:");
-    console.log("  Redirect URI:", redirectUri);
-    console.log("  Client URI:", clientUri);
     return {
         clientName: "Aurora",
         redirectUri,
