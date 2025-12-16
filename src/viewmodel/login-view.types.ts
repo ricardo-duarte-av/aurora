@@ -7,11 +7,11 @@
  *
  */
 
+import type { LoginParams } from "./client-view.types";
 import type {
     HomeserverLoginDetailsInterface,
-    LoginParams,
     OAuthAuthorizationDataInterface,
-} from "./client-view.types";
+} from "../index.web";
 
 /**
  * Represents the current login flow state

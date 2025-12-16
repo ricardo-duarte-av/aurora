@@ -145,6 +145,7 @@ export class TimelineViewModel
             items: [],
             showTopSpinner: true,
             firstItemIndex: INITIAL_FIRST_TIME_INDEX,
+            roomId: props.room.id(),
         });
         this.timelinePromise = this.props.room.timeline();
         this.run();

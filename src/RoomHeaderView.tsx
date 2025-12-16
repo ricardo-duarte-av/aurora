@@ -9,13 +9,11 @@ import "./RoomHeaderView.css";
 import "./viewmodel/TimelineViewModel";
 import { Avatar } from "@vector-im/compound-web";
 import type React from "react";
-import { useMemo } from "react";
 import { useViewModel } from "@element-hq/web-shared-components";
-import type { RoomListViewModel } from "./viewmodel/RoomListViewModel";
+import type { RoomItemViewModel } from "./viewmodel/RoomListItemViewModel";
 
 type RoomHeaderViewProps = {
-    vm: RoomListViewModel;
-    currentRoomId: string;
+    roomHeaderViewModel: RoomItemViewModel;
 };
 
 function mxcToUrl(mxcUrl: string): string {
@@ -26,26 +24,15 @@ function mxcToUrl(mxcUrl: string): string {
 }
 
 export const RoomHeaderView: React.FC<RoomHeaderViewProps> = ({
-    vm,
-    currentRoomId,
+    roomHeaderViewModel,
 }) => {
-    const { rooms } = useViewModel(vm);
-    const room = useMemo(
-        () => rooms.find((room) => room.getSnapshot().roomId === currentRoomId),
-        [currentRoomId, rooms],
-    );
-
-    if (!room) {
-        return null;
-    }
-
-    const roomInfo = useViewModel(room);
+    const roomInfo = useViewModel(roomHeaderViewModel);
 
     return (
         <div className="mx_RoomHeader">
             <div className="mx_RoomHeader_avatar">
                 <Avatar
-                    id={currentRoomId}
+                    id={roomInfo.roomId}
                     name={roomInfo?.info?.displayName || ""}
                     src={
                         roomInfo?.info?.avatarUrl

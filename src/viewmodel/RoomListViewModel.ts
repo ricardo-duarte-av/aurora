@@ -21,7 +21,7 @@ import {
     RoomListLoadingState,
     type TaskHandleInterface,
 } from "../index.web";
-import { RoomListItemViewModel } from "./RoomListItemViewModel";
+import { RoomItemViewModel } from "./RoomListItemViewModel";
 import type {
     Props,
     RoomListViewActions,
@@ -52,13 +52,14 @@ export class RoomListViewModel
             loadingState: undefined,
             filters: initialFilters,
             canLoadMore: true,
+            currentRoomId: undefined,
         });
 
         this.run();
     }
 
-    private parseRoom(room: RoomInterface): RoomListItemViewModel {
-        return new RoomListItemViewModel({ room });
+    private parseRoom(room: RoomInterface): RoomItemViewModel {
+        return new RoomItemViewModel({ room });
     }
 
     private static computeFilters(selectedFilter: SupportedFilters) {
@@ -160,6 +161,7 @@ export class RoomListViewModel
 
     public setActiveRoom = (roomId: string): void => {
         this.activeRoom = roomId;
+        this.snapshot.merge({ currentRoomId: roomId });
         this.subscribeToRooms();
     };
 
