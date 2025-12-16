@@ -7,14 +7,13 @@
  *
  */
 
-import type { ClientInterface, RoomMember } from "../index.web";
+import type { ClientInterface, RoomInterface, RoomMember } from "../index.web";
 
 export const SEPARATOR = "SEPARATOR";
 export type MemberWithSeparator = RoomMember | typeof SEPARATOR;
 
 export interface Props {
-    roomId: string;
-    client: ClientInterface;
+    room: RoomInterface;
 }
 
 export interface MemberListViewSnapshot {

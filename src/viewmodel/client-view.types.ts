@@ -12,6 +12,7 @@ import type { ClientViewModel } from "./ClientViewModel";
 import type { EncryptionViewModel } from "./EncryptionViewModel";
 import type { LoginViewModel } from "./LoginViewModel";
 import type { RoomListViewModel } from "./RoomListViewModel";
+import type { RoomViewModel } from "./RoomViewModel";
 
 export enum ClientState {
     Unknown = 0,
@@ -44,17 +45,14 @@ export interface ClientViewSnapshot {
     /** Current authentication state */
     clientState: ClientState;
 
-    /** ViewModel for the current room's timeline */
-    timelineStore?: TimelineViewModel;
+    /** ViewModel for the current room */
+    roomViewModel?: RoomViewModel;
 
     /** ViewModel for the login form */
     loginViewModel?: LoginViewModel;
 
     /** ViewModel for the list of all rooms */
     roomListViewModel?: RoomListViewModel;
-
-    /** ViewModel for the current room's member list */
-    memberListStore?: MemberListViewModel;
 
     /** ViewModel for encryption and recovery management */
     encryptionViewModel?: EncryptionViewModel;
@@ -67,9 +65,6 @@ export interface ClientViewSnapshot {
 
     /** Current user's avatar URL */
     avatarUrl?: string;
-
-    /** Currently selected room ID */
-    currentRoomId?: string;
 }
 
 /**

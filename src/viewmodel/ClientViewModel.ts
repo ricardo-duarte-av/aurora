@@ -15,6 +15,7 @@ import {
 import { BaseViewModel } from "@element-hq/web-shared-components";
 import { MemberListViewModel } from "./MemberListViewModel";
 import { TimelineViewModel } from "./TimelineViewModel";
+import { RoomViewModel } from "./RoomViewModel";
 import {
     type ClientInterface,
     type ClientSessionDelegate,
@@ -53,28 +54,30 @@ export class ClientViewModel
     private client?: ClientInterface;
     private storagePassphrase?: string;
     private storageStoreId?: string;
+    private currentRoomId?: string;
+
     public constructor(props: Props) {
         super(props, {
             clientState: ClientState.Unknown,
-            timelineStore: undefined,
+            roomViewModel: undefined,
             roomListViewModel: undefined,
             loginViewModel: undefined,
-            memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
             avatarUrl: undefined,
-            currentRoomId: undefined,
         });
 
         // Create loginViewModel after super() call
-        this.snapshot.merge({
-            loginViewModel: new LoginViewModel({
-                onLogin: this.login.bind(this),
-                onCheckHomeserver: this.checkHomeserverCapabilities.bind(this),
-                onGetOidcAuthUrl: this.getOidcAuthUrl.bind(this),
-                onLoginWithOidcCallback: this.loginWithOidcCallback.bind(this),
-                onAbortOidcLogin: this.abortOidcLogin.bind(this),
-            }),
+        this.snapshot.merge({ loginViewModel: this.initLoginViewModel() });
+    }
+
+    private initLoginViewModel(): LoginViewModel {
+        return new LoginViewModel({
+            onLogin: this.login.bind(this),
+            onCheckHomeserver: this.checkHomeserverCapabilities.bind(this),
+            onGetOidcAuthUrl: this.getOidcAuthUrl.bind(this),
+            onLoginWithOidcCallback: this.loginWithOidcCallback.bind(this),
+            onAbortOidcLogin: this.abortOidcLogin.bind(this),
         });
     }
 
@@ -235,24 +238,16 @@ export class ClientViewModel
 
         this.client = undefined;
 
-        // Reset login view model to server input screen
-        const loginViewModel = this.getSnapshot().loginViewModel;
-        if (loginViewModel) {
-            loginViewModel.changeServer();
-        }
-
         this.snapshot.set({
             clientState: ClientState.LoggedOut,
-            timelineStore: undefined,
+            roomViewModel: undefined,
             roomListViewModel: undefined,
-            memberListStore: undefined,
             userId: undefined,
             displayName: undefined,
             avatarUrl: undefined,
-            currentRoomId: undefined,
             encryptionViewModel: undefined,
             // Keep loginViewModel so we can log in again
-            loginViewModel: loginViewModel,
+            loginViewModel: this.initLoginViewModel(),
         });
     }
 
@@ -270,7 +265,15 @@ export class ClientViewModel
 
         const userId = this.client.userId();
         const displayName = await this.client.displayName();
-        const avatarUrl = await this.client.avatarUrl();
+
+        // avatarUrl has thrown in some cases, handle gracefully
+        let avatarUrl: string | undefined;
+        try {
+            avatarUrl = await this.client.avatarUrl();
+        } catch (e) {
+            console.log("No avatar URL available for user");
+            avatarUrl = undefined;
+        }
 
         this.snapshot.merge({
             userId,
@@ -596,32 +599,28 @@ export class ClientViewModel
         if (roomId === "") return;
 
         const snapshot = this.getSnapshot();
-        const currentTimeline = snapshot.timelineStore;
 
         // Check if we're already viewing this room
-        if (snapshot.currentRoomId === roomId) {
+        if (this.currentRoomId === roomId) {
             return;
         }
 
-        // Dispose the current timeline and member list
-        currentTimeline?.dispose();
-        snapshot.memberListStore?.dispose();
+        // Dispose the current room view model
+        snapshot.roomViewModel?.dispose();
 
         if (!this.client) return;
 
         const room = this.client.getRoom(roomId);
         if (!room) return;
 
-        const timelineStore = new TimelineViewModel({ room });
-        const memberListStore = new MemberListViewModel({
-            roomId,
-            client: this.client,
-        });
+        const roomViewModel = new RoomViewModel({ room });
+
+        this.currentRoomId = roomId;
 
         this.snapshot.merge({
-            timelineStore,
-            memberListStore,
-            currentRoomId: roomId,
+            roomViewModel,
         });
+
+        snapshot.roomListViewModel?.setActiveRoom(roomId);
     }
 }

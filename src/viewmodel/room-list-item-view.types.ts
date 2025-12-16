@@ -10,7 +10,7 @@
 import type { EventTimelineItem, RoomInfo, RoomInterface } from "../index.web";
 
 /**
- * Props passed to RoomListItemViewModel constructor
+ * Props passed to RoomItemViewModel constructor
  */
 export interface Props {
     room: RoomInterface;

@@ -16,7 +16,6 @@ import type { RoomListViewModel } from "./viewmodel/RoomListViewModel";
 type RoomListViewProps = {
     vm: RoomListViewModel;
     onRoomSelected: (roomId: string) => void;
-    currentRoomId: string;
 };
 
 /**
@@ -25,9 +24,8 @@ type RoomListViewProps = {
 export function RoomListView({
     vm,
     onRoomSelected,
-    currentRoomId,
 }: RoomListViewProps): JSX.Element {
-    const { rooms, canLoadMore } = useViewModel(vm);
+    const { rooms, canLoadMore, currentRoomId } = useViewModel(vm);
 
     // Show spinner if we're in the "All" filter AND can load more rooms
     const showFooter = vm.isAllFilter() && canLoadMore;

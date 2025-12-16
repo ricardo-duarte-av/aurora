@@ -18,6 +18,7 @@ export interface TimelineViewSnapshot {
     items: TimelineItem<any>[];
     showTopSpinner: boolean;
     firstItemIndex: number;
+    roomId: string;
 }
 
 export interface TimelineViewActions {

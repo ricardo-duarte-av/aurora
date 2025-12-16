@@ -12,7 +12,7 @@ import "./RoomListItemView.css";
 
 import { Avatar } from "@vector-im/compound-web";
 import { NotificationDecoration } from "./NotificationDecoration";
-import type { RoomListItemViewModel } from "./viewmodel/RoomListItemViewModel";
+import type { RoomItemViewModel } from "./viewmodel/RoomListItemViewModel";
 import { Flex } from "./utils/Flex";
 import { useViewModel } from "@element-hq/web-shared-components";
 
@@ -21,7 +21,7 @@ interface RoomListItemViewProps
     /**
      * The room to display
      */
-    room: RoomListItemViewModel;
+    room: RoomItemViewModel;
     /**
      * Whether the room is selected
      */
