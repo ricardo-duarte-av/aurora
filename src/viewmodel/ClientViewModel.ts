@@ -184,6 +184,7 @@ export class ClientViewModel
                     sessionData.session,
                     sessionData.passphrase,
                     sessionData.storeId,
+                    this.getSessionDelegate(),
                 );
             } catch (restoreError) {
                 console.error("Failed to restore client, cleaning up store");
@@ -461,7 +462,10 @@ export class ClientViewModel
     ): Promise<HomeserverLoginDetailsInterface> {
         try {
             const { client, passphrase, storeId } =
-                await createAuthenticationClient(server);
+                await createAuthenticationClient(
+                    server,
+                    this.getSessionDelegate(),
+                );
             this.client = client;
             this.storagePassphrase = passphrase;
             this.storageStoreId = storeId;

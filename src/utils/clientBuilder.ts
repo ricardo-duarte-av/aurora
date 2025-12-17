@@ -7,7 +7,11 @@
  *
  */
 
-import type { ClientInterface, Session as SessionInterface } from "../index.web";
+import type {
+    ClientInterface,
+    Session as SessionInterface,
+    ClientSessionDelegate,
+} from "../index.web";
 import {
     ClientBuilder,
     type ClientBuilderInterface,
@@ -18,7 +22,8 @@ import {
 } from "../index.web";
 
 interface BaseBuilderOptions {
-    setupEncryption?: boolean;
+    sessionDelegate: ClientSessionDelegate;
+    setupEncryption: boolean;
     slidingSync: "discover" | "restored";
     passphrase?: string;
     storeName?: string;
@@ -46,7 +51,9 @@ function createBaseClientBuilder(
     const storeName = options.storeName || "aurora-store";
     const storeBuilder = new IndexedDbStoreBuilder(storeName);
     if (options.passphrase) {
-        builder = builder.indexeddbStore(storeBuilder.passphrase(options.passphrase));
+        builder = builder.indexeddbStore(
+            storeBuilder.passphrase(options.passphrase),
+        );
     } else {
         builder = builder.indexeddbStore(storeBuilder);
     }
@@ -59,6 +66,11 @@ function createBaseClientBuilder(
         );
         // Note: We don't use autoEnableBackups(true) because we want to manually
         // set up recovery and capture the recovery key to use as the IndexedDB passphrase
+    }
+
+    // Add session delegate if provided
+    if (options.sessionDelegate) {
+        builder = builder.setSessionDelegate(options.sessionDelegate);
     }
 
     return builder;
@@ -89,6 +101,7 @@ function generateStoreId(): string {
  */
 export async function createAuthenticationClient(
     serverNameOrUrl: string,
+    sessionDelegate: ClientSessionDelegate,
 ): Promise<{ client: ClientInterface; passphrase: string; storeId: string }> {
     // Generate passphrase for this authentication session
     const passphrase = generatePassphrase();
@@ -106,9 +119,10 @@ export async function createAuthenticationClient(
 
     // Create client with unique store and encryption enabled
     const client = await createBaseClientBuilder({
-        passphrase,
+        sessionDelegate,
         setupEncryption: true,
         slidingSync: "discover",
+        passphrase,
         storeName,
     })
         .serverNameOrHomeserverUrl(serverNameOrUrl)
@@ -130,6 +144,7 @@ export async function restoreClient(
     session: SessionInterface,
     passphrase: string,
     storeId: string,
+    sessionDelegate: ClientSessionDelegate,
 ): Promise<ClientInterface> {
     console.log("[restoreClient] Starting restoration");
     console.log(`[restoreClient] - userId: ${session.userId}`);
@@ -148,15 +163,14 @@ export async function restoreClient(
     console.log(`[restoreClient] - storeName: ${storeName}`);
 
     const builder: ClientBuilderInterface = createBaseClientBuilder({
+        sessionDelegate,
+        setupEncryption: true,
         slidingSync: "restored",
         passphrase,
-        setupEncryption: true,
         storeName,
     });
 
-    const client = await builder
-        .homeserverUrl(session.homeserverUrl)
-        .build();
+    const client = await builder.homeserverUrl(session.homeserverUrl).build();
 
     console.log("Restoring session...");
     await client.restoreSession(sessionWithSlidingSync);

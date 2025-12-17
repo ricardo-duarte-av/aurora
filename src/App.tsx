@@ -44,16 +44,9 @@ const App: React.FC = () => {
             </div>
         );
     } else if (clientState === ClientState.SettingUpEncryption) {
-        // Show encryption setup if we have the view model, otherwise show loading
-        // LoggedIn state is used during session restore before sync starts
         component = encryptionViewModel ? (
             <Encryption encryptionViewModel={encryptionViewModel} />
-        ) : (
-            <div className="mx_LoadingSession">
-                <InlineSpinner size={32} />
-                <h2>Starting sync...</h2>
-            </div>
-        );
+        ) : null;
     } else if (clientState === ClientState.Syncing) {
         component = (
             <Client
