@@ -8,12 +8,10 @@
 import "./RoomListView.css";
 import { InlineSpinner } from "@vector-im/compound-web";
 import type { JSX } from "react";
-import { useMemo } from "react";
 import { GroupedVirtuoso } from "react-virtuoso";
 import { useViewModel } from "@element-hq/web-shared-components";
 import { RoomListItemView } from "./RoomListItemView";
 import type { RoomListViewModel } from "./viewmodel/RoomListViewModel";
-import type { RoomSummary } from "./viewmodel/RoomSummary";
 
 type RoomListViewProps = {
     vm: RoomListViewModel;
@@ -27,19 +25,8 @@ export function RoomListView({
     vm,
     onRoomSelected,
 }: RoomListViewProps): JSX.Element {
-    const { sections, currentRoomId, loading } = useViewModel(vm);
-
-    // Compute flat list of rooms and group counts from sections
-    const { rooms, groupCounts } = useMemo(() => {
-        const rooms: RoomSummary[] = sections.flatMap((section) =>
-            section.expanded ? section.rooms : [],
-        );
-        const groupCounts = sections.map((section) =>
-            section.expanded ? section.rooms.length : 0,
-        );
-
-        return { rooms, groupCounts };
-    }, [sections]);
+    const { sections, visibleRooms, groupCounts, currentRoomId, loading } =
+        useViewModel(vm);
 
     // Show centered spinner while waiting for room list to load
     if (loading) {
@@ -64,6 +51,17 @@ export function RoomListView({
             <GroupedVirtuoso
                 style={{ height: "100%" }}
                 groupCounts={groupCounts}
+                components={{
+                    Group: ({ style, ...props }) => (
+                        <div
+                            {...props}
+                            style={{
+                                ...style,
+                                zIndex: 1,
+                            }}
+                        />
+                    ),
+                }}
                 groupContent={(index) => (
                     <button
                         type="button"
@@ -77,8 +75,8 @@ export function RoomListView({
                             cursor: "pointer",
                             userSelect: "none",
                             display: "flex",
-                            justifyContent: "space-between",
                             alignItems: "center",
+                            gap: "0.5rem",
                             fontWeight: 600,
                             fontSize: "0.875rem",
                             border: "none",
@@ -87,7 +85,6 @@ export function RoomListView({
                         }}
                         onClick={() => vm.toggleSection(index)}
                     >
-                        <span>{sections[index].name}</span>
                         <span
                             style={{
                                 transform: sections[index].expanded
@@ -99,10 +96,11 @@ export function RoomListView({
                         >
                             ❯
                         </span>
+                        <span>{sections[index].name}</span>
                     </button>
                 )}
                 itemContent={(index) => {
-                    const room = rooms[index];
+                    const room = visibleRooms[index];
                     return (
                         <RoomListItemView
                             room={room}

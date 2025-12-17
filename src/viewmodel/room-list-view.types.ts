@@ -45,6 +45,12 @@ export interface RoomListViewSnapshot {
     /** Room sections (Favourites, Other, Low Priority) */
     sections: Array<RoomSection>;
 
+    /** Flat list of visible rooms (computed from sections) */
+    visibleRooms: Array<RoomSummary>;
+
+    /** Group counts for virtuoso (computed from sections) */
+    groupCounts: Array<number>;
+
     /** Currently selected filter */
     selectedFilter: SupportedFilters;
 

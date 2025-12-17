@@ -8,4 +8,7 @@
 .mx_RoomListView {
     height: 100%;
     flex: 1;
+    min-width: 360px;
+    /* Create an isolated stacking context so sticky headers stay within */
+    isolation: isolate;
 }
