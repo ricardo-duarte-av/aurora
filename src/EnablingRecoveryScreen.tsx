@@ -11,6 +11,7 @@ import { InlineSpinner } from "@vector-im/compound-web";
 import { useViewModel } from "@element-hq/web-shared-components";
 import type React from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
+import styles from "./EnablingRecoveryScreen.module.css";
 
 export interface EnablingRecoveryScreenProps {
     encryptionViewModel: EncryptionViewModel;
@@ -22,18 +23,9 @@ export const EnablingRecoveryScreen: React.FC<EnablingRecoveryScreenProps> = ({
     const { enableRecoveryProgress } = useViewModel(encryptionViewModel);
 
     return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "var(--cpd-space-2x)",
-                width: "100%",
-                boxSizing: "border-box",
-            }}
-        >
+        <div className={styles.container}>
             <InlineSpinner />
-            <p style={{ textAlign: "center" }}>{enableRecoveryProgress}</p>
+            <p className={styles.progressText}>{enableRecoveryProgress}</p>
         </div>
     );
 };

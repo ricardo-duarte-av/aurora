@@ -10,6 +10,7 @@
 import { Button } from "@vector-im/compound-web";
 import type React from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
+import styles from "./SetupRecoveryScreen.module.css";
 
 export interface SetupRecoveryScreenProps {
     encryptionViewModel: EncryptionViewModel;
@@ -19,31 +20,13 @@ export const SetupRecoveryScreen: React.FC<SetupRecoveryScreenProps> = ({
     encryptionViewModel,
 }) => {
     return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                width: "100%",
-                boxSizing: "border-box",
-            }}
-        >
-            <p
-                style={{
-                    textAlign: "center",
-                    marginBottom: "var(--cpd-space-4x)",
-                    color: "var(--cpd-color-text-secondary)",
-                }}
-            >
-                Set up a recovery key to secure your encrypted messages.
-            </p>
-
+        <div className={styles.container}>
             <Button
                 kind="primary"
                 size="lg"
                 onClick={async () => await encryptionViewModel.enableRecovery()}
             >
-                Set Up Recovery
+                Generate your recovery key
             </Button>
         </div>
     );

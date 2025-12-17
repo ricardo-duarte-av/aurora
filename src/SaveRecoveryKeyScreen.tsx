@@ -13,6 +13,8 @@ import type React from "react";
 import { useState } from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
 import CheckIcon from "@vector-im/compound-design-tokens/assets/web/icons/check";
+import CopyIcon from "@vector-im/compound-design-tokens/assets/web/icons/copy";
+import styles from "./SaveRecoveryKeyScreen.module.css";
 
 export interface SaveRecoveryKeyScreenProps {
     encryptionViewModel: EncryptionViewModel;
@@ -38,43 +40,10 @@ export const SaveRecoveryKeyScreen: React.FC<SaveRecoveryKeyScreenProps> = ({
     };
 
     return (
-        <div style={{ width: "100%", boxSizing: "border-box" }}>
-            <p
-                style={{
-                    textAlign: "center",
-                    margin: 0,
-                    marginBottom: "var(--cpd-space-4x)",
-                    color: "var(--cpd-color-text-secondary)",
-                }}
-            >
-                Your recovery key has been created. Please save it in a safe
-                place. You'll need it to recover your encrypted messages if you
-                lose access to all your devices.
-            </p>
+        <div className={styles.container}>
+            <div className={styles.recoveryKeyBox}>{recoveryKey}</div>
 
-            <div
-                style={{
-                    backgroundColor: "var(--cpd-color-bg-subtle-secondary)",
-                    padding: "var(--cpd-space-4x)",
-                    borderRadius: "var(--cpd-radius-pill-effect)",
-                    marginBottom: "var(--cpd-space-4x)",
-                    fontFamily: "monospace",
-                    fontSize: "14px",
-                    wordBreak: "break-word",
-                    overflowWrap: "break-word",
-                    boxSizing: "border-box",
-                }}
-            >
-                {recoveryKey}
-            </div>
-
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--cpd-space-2x)",
-                }}
-            >
+            <div className={styles.actions}>
                 <Button
                     kind="secondary"
                     size="lg"
@@ -82,17 +51,14 @@ export const SaveRecoveryKeyScreen: React.FC<SaveRecoveryKeyScreenProps> = ({
                 >
                     {copied ? (
                         <>
-                            <CheckIcon
-                                style={{
-                                    width: "20px",
-                                    height: "20px",
-                                    marginRight: "var(--cpd-space-1x)",
-                                }}
-                            />
+                            <CheckIcon className={styles.checkIcon} />
                             Copied!
                         </>
                     ) : (
-                        "Copy to Clipboard"
+                        <>
+                            <CopyIcon className={styles.checkIcon} />
+                            Copy recovery key
+                        </>
                     )}
                 </Button>
                 <Button

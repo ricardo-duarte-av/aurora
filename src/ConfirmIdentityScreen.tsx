@@ -12,6 +12,7 @@ import { useViewModel } from "@element-hq/web-shared-components";
 import type React from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
 import { IdentityConfirmationAction } from "./viewmodel/encryption-view.types";
+import styles from "./ConfirmIdentityScreen.module.css";
 
 export interface ConfirmIdentityScreenProps {
     encryptionViewModel: EncryptionViewModel;
@@ -23,26 +24,7 @@ export const ConfirmIdentityScreen: React.FC<ConfirmIdentityScreenProps> = ({
     const { availableActions } = useViewModel(encryptionViewModel);
 
     return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--cpd-space-3x)",
-                width: "100%",
-                boxSizing: "border-box",
-            }}
-        >
-            <p
-                style={{
-                    textAlign: "center",
-                    margin: 0,
-                    marginBottom: "var(--cpd-space-2x)",
-                    color: "var(--cpd-color-text-secondary)",
-                }}
-            >
-                Confirm your identity to set up secure messaging.
-            </p>
-
+        <div className={styles.container}>
             {availableActions === undefined ? (
                 <Button kind="primary" size="lg" disabled={true}>
                     <InlineSpinner />
@@ -50,17 +32,17 @@ export const ConfirmIdentityScreen: React.FC<ConfirmIdentityScreenProps> = ({
                 </Button>
             ) : (
                 <>
-                    {availableActions.includes(IdentityConfirmationAction.InteractiveVerification) && (
-                        <Button
-                            kind="primary"
-                            size="lg"
-                            disabled={true}
-                        >
-                            Use another device
+                    {availableActions.includes(
+                        IdentityConfirmationAction.InteractiveVerification,
+                    ) && (
+                        <Button kind="primary" size="lg" disabled={true}>
+                            Use another device (coming soon)
                         </Button>
                     )}
 
-                    {availableActions.includes(IdentityConfirmationAction.Recovery) && (
+                    {availableActions.includes(
+                        IdentityConfirmationAction.Recovery,
+                    ) && (
                         <Button
                             kind="primary"
                             size="lg"

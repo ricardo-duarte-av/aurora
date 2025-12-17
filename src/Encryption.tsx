@@ -18,8 +18,10 @@ import type React from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
 import { EncryptionFlow } from "./viewmodel/encryption-view.types";
 import LockIcon from "@vector-im/compound-design-tokens/assets/web/icons/lock-solid";
-import KeyIcon from "@vector-im/compound-design-tokens/assets/web/icons/key";
+import KeyIconSolid from "@vector-im/compound-design-tokens/assets/web/icons/key-solid";
+import InfoSolidIcon from "@vector-im/compound-design-tokens/assets/web/icons/info-solid";
 import ChevronLeftIcon from "@vector-im/compound-design-tokens/assets/web/icons/chevron-left";
+import CheckCircle from "@vector-im/compound-design-tokens/assets/web/icons/check-circle";
 import { ConfirmIdentityScreen } from "./ConfirmIdentityScreen";
 import { RecoveryKeyEntryScreen } from "./RecoveryKeyEntryScreen";
 import { SetupRecoveryScreen } from "./SetupRecoveryScreen";
@@ -28,6 +30,7 @@ import { SaveRecoveryKeyScreen } from "./SaveRecoveryKeyScreen";
 import { RecoveryCompleteScreen } from "./RecoveryCompleteScreen";
 import { ResetIdentityWarningScreen } from "./ResetIdentityWarningScreen";
 import { ResetIdentityPasswordScreen } from "./ResetIdentityPasswordScreen";
+import styles from "./Encryption.module.css";
 
 export interface EncryptionProps {
     encryptionViewModel: EncryptionViewModel;
@@ -42,16 +45,9 @@ export const Encryption: React.FC<EncryptionProps> = ({
         switch (flow) {
             case EncryptionFlow.Loading:
                 return (
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: "var(--cpd-space-2x)",
-                        }}
-                    >
+                    <div className={styles.loadingContainer}>
                         <InlineSpinner />
-                        <p style={{ textAlign: "center" }}>
+                        <p className={styles.loadingText}>
                             Checking encryption status...
                         </p>
                     </div>
@@ -99,52 +95,76 @@ export const Encryption: React.FC<EncryptionProps> = ({
                     />
                 );
             case EncryptionFlow.Complete:
-                return <RecoveryCompleteScreen />;
+                return null;
         }
     };
 
     const getTitle = () => {
         switch (flow) {
-            case EncryptionFlow.SaveRecoveryKey:
-                return "Save Your Recovery Key";
-            case EncryptionFlow.EnterRecoveryKey:
-                return "Enter recovery key";
+            case EncryptionFlow.Loading:
+                return "Loading...";
+            case EncryptionFlow.EnablingRecovery:
+                return "Enabling Recovery...";
             case EncryptionFlow.ConfirmIdentity:
                 return "Confirm your identity";
+            case EncryptionFlow.EnterRecoveryKey:
+                return "Enter recovery key";
+            case EncryptionFlow.SetupRecovery:
+                return "Set up recovery";
+            case EncryptionFlow.SaveRecoveryKey:
+                return "Save your recovery key somewhere safe";
             case EncryptionFlow.ResetIdentityWarning:
-                return "Reset your identity?";
+                return "Can't confirm? You'll need to reset your identity.";
             case EncryptionFlow.ResetIdentityPassword:
                 return "Enter your account password to continue";
             case EncryptionFlow.Complete:
                 return "Recovery Enabled";
-            default:
-                return "Encryption & Security";
         }
     };
 
     const getSubtitle = () => {
         switch (flow) {
-            case EncryptionFlow.EnterRecoveryKey:
-                return "Your key storage is currently out of sync.";
-            case EncryptionFlow.ResetIdentityPassword:
-                return "Confirm that you want to reset your identity.";
             case EncryptionFlow.Loading:
-            case EncryptionFlow.SaveRecoveryKey:
             case EncryptionFlow.EnablingRecovery:
+            case EncryptionFlow.ResetIdentityWarning:
+            case EncryptionFlow.ResetIdentityPassword:
             case EncryptionFlow.Complete:
                 return null;
-            default:
-                return "Set up secure messaging and message recovery.";
+            case EncryptionFlow.ConfirmIdentity:
+                return "Verify this device to setup up secure messaging.";
+            case EncryptionFlow.EnterRecoveryKey:
+                return "Make sure nobody can see this screen!";
+            case EncryptionFlow.SetupRecovery:
+                return "Your key storage is protected by a recovery key.";
+            case EncryptionFlow.SaveRecoveryKey:
+                return "Write down this recovery key somewhere safe, like a password manager, encrypted note, or physical safe.";
         }
     };
 
     const getIcon = () => {
         switch (flow) {
-            case EncryptionFlow.EnterRecoveryKey:
-            case EncryptionFlow.SaveRecoveryKey:
-                return KeyIcon;
-            default:
+            case EncryptionFlow.Complete:
+                return CheckCircle;
+            case EncryptionFlow.ConfirmIdentity:
                 return LockIcon;
+            case EncryptionFlow.Loading:
+            case EncryptionFlow.EnablingRecovery:
+            case EncryptionFlow.ResetIdentityPassword:
+            case EncryptionFlow.EnterRecoveryKey:
+            case EncryptionFlow.SetupRecovery:
+            case EncryptionFlow.SaveRecoveryKey:
+                return KeyIconSolid;
+            case EncryptionFlow.ResetIdentityWarning:
+                return InfoSolidIcon;
+        }
+    };
+
+    const getLearnMoreLink = (): string | null => {
+        switch (flow) {
+            case EncryptionFlow.ConfirmIdentity:
+                return "https://element.io/en/help#encryption-device-verification";
+            default:
+                return null;
         }
     };
 
@@ -153,28 +173,17 @@ export const Encryption: React.FC<EncryptionProps> = ({
     };
 
     const Icon = getIcon();
+    const isCriticalFlow = flow === EncryptionFlow.ResetIdentityWarning;
+    const learnMoreLink = getLearnMoreLink();
 
     return (
         <div className="mx_LoginPage">
             <div className="mx_Login">
                 <Glass>
-                    <div
-                        className="mx_Login_dialog"
-                        style={{
-                            padding: "var(--cpd-space-5x)",
-                            boxSizing: "border-box",
-                            overflow: "hidden",
-                        }}
-                    >
+                    <div className={`mx_Login_dialog ${styles.dialog}`}>
                         <TooltipProvider>
                             {canGoBack && (
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        top: "var(--cpd-space-6x)",
-                                        left: "var(--cpd-space-6x)",
-                                    }}
-                                >
+                                <div className={styles.backButton}>
                                     <IconButton
                                         kind="secondary"
                                         onClick={handleGoBack}
@@ -185,60 +194,40 @@ export const Encryption: React.FC<EncryptionProps> = ({
                                 </div>
                             )}
 
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    gap: "var(--cpd-space-2x)",
-                                    marginBottom: "var(--cpd-space-9x)",
-                                }}
-                            >
+                            <div className={styles.header}>
                                 <div
-                                    style={{
-                                        width: "64px",
-                                        height: "64px",
-                                        borderRadius: "14px",
-                                        backgroundColor:
-                                            "var(--cpd-color-bg-subtle-secondary)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        marginBottom: "var(--cpd-space-2x)",
-                                    }}
+                                    className={`${styles.iconContainer} ${isCriticalFlow ? styles.iconContainerCritical : ""}`}
                                 >
                                     <Icon
                                         width="32px"
                                         height="32px"
-                                        style={{
-                                            color: "var(--cpd-color-icon-secondary)",
-                                        }}
+                                        className={
+                                            isCriticalFlow
+                                                ? styles.iconCritical
+                                                : styles.icon
+                                        }
                                     />
                                 </div>
 
-                                <h2
-                                    style={{
-                                        textAlign: "center",
-                                        margin: 0,
-                                        fontSize:
-                                            "var(--cpd-font-size-heading-md)",
-                                        fontWeight:
-                                            "var(--cpd-font-weight-semibold)",
-                                    }}
-                                >
-                                    {getTitle()}
-                                </h2>
+                                <h2 className={styles.title}>{getTitle()}</h2>
 
                                 {getSubtitle() && (
-                                    <p
-                                        style={{
-                                            textAlign: "center",
-                                            margin: 0,
-                                            color: "var(--cpd-color-text-secondary)",
-                                        }}
-                                    >
+                                    <p className={styles.subtitle}>
                                         {getSubtitle()}
                                     </p>
+                                )}
+
+                                {learnMoreLink && (
+                                    <div className={styles.learnMore}>
+                                        <a
+                                            href={learnMoreLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={styles.learnMoreLink}
+                                        >
+                                            Learn more
+                                        </a>
+                                    </div>
                                 )}
                             </div>
 

@@ -13,6 +13,7 @@ import type React from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
 import CheckIcon from "@vector-im/compound-design-tokens/assets/web/icons/check";
 import InfoIcon from "@vector-im/compound-design-tokens/assets/web/icons/info";
+import styles from "./ResetIdentityWarningScreen.module.css";
 
 export interface ResetIdentityWarningScreenProps {
     encryptionViewModel: EncryptionViewModel;
@@ -32,155 +33,49 @@ export const ResetIdentityWarningScreen: React.FC<
     };
 
     return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--cpd-space-4x)",
-                width: "100%",
-                boxSizing: "border-box",
-            }}
-        >
-            <p
-                style={{
-                    textAlign: "center",
-                    margin: 0,
-                    fontWeight: 600,
-                    color: "var(--cpd-color-text-primary)",
-                }}
-            >
-                Can't confirm? You'll need to reset your identity.
-            </p>
-
+        <div className={styles.container}>
             {/* List of what happens when resetting */}
-            <div
-                style={{
-                    backgroundColor: "var(--cpd-color-bg-subtle-secondary)",
-                    borderRadius: "var(--cpd-radius-md)",
-                    padding: "var(--cpd-space-3x)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--cpd-space-2x)",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        gap: "var(--cpd-space-2x)",
-                        alignItems: "flex-start",
-                    }}
-                >
+            <div className={styles.infoBox}>
+                <div className={styles.infoItem}>
                     <CheckIcon
-                        style={{
-                            width: "20px",
-                            height: "20px",
-                            color: "var(--cpd-color-icon-accent-primary)",
-                            flexShrink: 0,
-                            marginTop: "2px",
-                        }}
+                        className={`${styles.icon} ${styles.iconSuccess}`}
                     />
-                    <span
-                        style={{
-                            fontSize: "14px",
-                            color: "var(--cpd-color-text-primary)",
-                        }}
-                    >
+                    <span className={styles.infoText}>
                         Your account details, contacts, preferences, and chat
                         list will be kept
                     </span>
                 </div>
 
-                <div
-                    style={{
-                        display: "flex",
-                        gap: "var(--cpd-space-2x)",
-                        alignItems: "flex-start",
-                    }}
-                >
-                    <InfoIcon
-                        style={{
-                            width: "20px",
-                            height: "20px",
-                            color: "var(--cpd-color-icon-secondary)",
-                            flexShrink: 0,
-                            marginTop: "2px",
-                        }}
-                    />
-                    <span
-                        style={{
-                            fontSize: "14px",
-                            color: "var(--cpd-color-text-primary)",
-                        }}
-                    >
+                <div className={styles.infoItem}>
+                    <InfoIcon className={`${styles.icon} ${styles.iconInfo}`} />
+                    <span className={styles.infoText}>
                         You will lose any message history that's stored only on
                         the server
                     </span>
                 </div>
 
-                <div
-                    style={{
-                        display: "flex",
-                        gap: "var(--cpd-space-2x)",
-                        alignItems: "flex-start",
-                    }}
-                >
-                    <InfoIcon
-                        style={{
-                            width: "20px",
-                            height: "20px",
-                            color: "var(--cpd-color-icon-secondary)",
-                            flexShrink: 0,
-                            marginTop: "2px",
-                        }}
-                    />
-                    <span
-                        style={{
-                            fontSize: "14px",
-                            color: "var(--cpd-color-text-primary)",
-                        }}
-                    >
+                <div className={styles.infoItem}>
+                    <InfoIcon className={`${styles.icon} ${styles.iconInfo}`} />
+                    <span className={styles.infoText}>
                         You will need to verify all your existing devices and
                         contacts again
                     </span>
                 </div>
             </div>
 
-            <p
-                style={{
-                    textAlign: "center",
-                    margin: 0,
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: "var(--cpd-color-text-primary)",
-                }}
-            >
+            <p className={styles.warning}>
                 Only reset your identity if you don't have access to another
                 signed-in device and you've lost your recovery key.
             </p>
 
-            {error && (
-                <p
-                    style={{
-                        color: "var(--cpd-color-text-critical-primary)",
-                        textAlign: "center",
-                        margin: 0,
-                    }}
-                >
-                    {error}
-                </p>
-            )}
+            {error && <p className={styles.error}>{error}</p>}
 
             {isResetting && (
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "var(--cpd-space-2x)",
-                    }}
-                >
+                <div className={styles.loadingContainer}>
                     <InlineSpinner />
-                    <span style={{ fontSize: "14px" }}>Preparing reset...</span>
+                    <span className={styles.loadingText}>
+                        Preparing reset...
+                    </span>
                 </div>
             )}
 

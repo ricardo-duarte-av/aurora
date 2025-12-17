@@ -12,6 +12,7 @@ import { useViewModel } from "@element-hq/web-shared-components";
 import type React from "react";
 import { useState } from "react";
 import type { EncryptionViewModel } from "./viewmodel/EncryptionViewModel";
+import styles from "./RecoveryKeyEntryScreen.module.css";
 
 export interface RecoveryKeyEntryScreenProps {
     encryptionViewModel: EncryptionViewModel;
@@ -34,15 +35,9 @@ export const RecoveryKeyEntryScreen: React.FC<RecoveryKeyEntryScreenProps> = ({
     };
 
     return (
-        <div style={{ width: "100%", boxSizing: "border-box" }}>
+        <div className={styles.container}>
             {error && (
-                <div
-                    style={{
-                        color: "var(--cpd-color-text-critical-primary)",
-                        marginBottom: "var(--cpd-space-4x)",
-                        textAlign: "center",
-                    }}
-                >
+                <div className={styles.error}>
                     {error}
                 </div>
             )}
