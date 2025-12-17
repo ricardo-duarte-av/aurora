@@ -32,16 +32,30 @@ export const OidcCallback: React.FC = () => {
                 window.location.origin,
             );
 
-            // Close the popup immediately
+            // Close the popup (postMessage is synchronous and queues the message immediately)
             window.close();
         } else {
             // No opener - log error but don't block
             console.error(
-                "No parent window found. OIDC login must be initiated from the main window.",
+                "No parent window found. Cannot complete OIDC sign-in flow.",
             );
         }
     }, []);
 
-    // Render nothing - the window will close immediately
-    return null;
+    // Show a loading indicator while closing
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100vh",
+                backgroundColor: "var(--cpd-color-bg-canvas-default)",
+            }}
+        >
+            <p style={{ color: "var(--cpd-color-text-primary)" }}>
+                Completing sign in...
+            </p>
+        </div>
+    );
 };

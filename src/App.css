@@ -60,7 +60,13 @@ body {
 }
 
 .mx_Login {
-    width: 400px;
+    width: 480px;
+}
+
+@media (max-width: 600px) {
+    .mx_Login {
+        width: 400px;
+    }
 }
 
 .mx_Login_dialog {

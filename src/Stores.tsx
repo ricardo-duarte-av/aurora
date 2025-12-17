@@ -53,7 +53,8 @@ export function Stores({ children }: PropsWithChildren) {
         console.log("[Stores] Starting load...");
 
         const load = async () => {
-            const sessions = sessionStore.load();
+            const sessions = await sessionStore.load();
+
             if (!sessions || Object.keys(sessions).length === 0) {
                 const viewModel = new ClientViewModel({
                     sessionStore,
@@ -65,14 +66,14 @@ export function Stores({ children }: PropsWithChildren) {
             }
 
             const stores: ClientStores = {};
-            for (const session of Object.values(sessions)) {
+            for (const sessionData of Object.values(sessions)) {
                 const viewModel = new ClientViewModel({
                     sessionStore,
-                    userIdForLoading: session.userId,
+                    userIdForLoading: sessionData.session.userId,
                     onLogin: addClientStore,
                 });
                 await viewModel.tryLoadSession();
-                stores[session.userId] = viewModel;
+                stores[sessionData.session.userId] = viewModel;
             }
 
             console.log("Loaded stores", stores);

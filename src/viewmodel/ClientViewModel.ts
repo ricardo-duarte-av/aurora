@@ -7,12 +7,16 @@
  *
  */
 
+import {
+    createAuthenticationClient,
+    restoreClient,
+    validateNativeSlidingSync,
+} from "../utils/clientBuilder";
 import { BaseViewModel } from "@element-hq/web-shared-components";
 import { MemberListViewModel } from "./MemberListViewModel";
 import { TimelineViewModel } from "./TimelineViewModel";
 import { RoomViewModel } from "./RoomViewModel";
 import {
-    ClientBuilder,
     type ClientInterface,
     type ClientSessionDelegate,
     type HomeserverLoginDetailsInterface,
@@ -21,7 +25,6 @@ import {
     OidcPrompt,
     type RoomListServiceInterface,
     type Session,
-    SlidingSyncVersionBuilder,
     type SyncServiceInterface,
     type TaskHandleInterface,
     initPlatform,
@@ -35,6 +38,8 @@ import {
     type LoginParams,
     type Props,
 } from "./client-view.types";
+import type { Credential } from "./credentials.types";
+import { EncryptionViewModel } from "./EncryptionViewModel";
 import { LoginViewModel } from "./LoginViewModel";
 import { RoomListViewModel } from "./RoomListViewModel";
 
@@ -47,6 +52,8 @@ export class ClientViewModel
     private oidcAuthData?: OAuthAuthorizationDataInterface;
     private clientDelegateHandle?: TaskHandleInterface;
     private client?: ClientInterface;
+    private storagePassphrase?: string;
+    private storageStoreId?: string;
     private currentRoomId?: string;
 
     public constructor(props: Props) {
@@ -121,15 +128,15 @@ export class ClientViewModel
             console.log(
                 `[SessionDelegate] SDK requesting session for user: ${userId}`,
             );
-            const sessions = this.props.sessionStore.load();
+            const sessions = this.props.sessionStore.loadSessionsSync();
             if (!sessions || !sessions[userId]) {
                 throw new Error(`No session found for user ${userId}`);
             }
-            const session = sessions[userId];
+            const sessionData = sessions[userId];
             console.log(
-                `[SessionDelegate] Returning session with oidcData: ${!!session.oidcData}`,
+                `[SessionDelegate] Returning session with oidcData: ${!!sessionData.session.oidcData}`,
             );
-            return session;
+            return sessionData.session;
         },
         saveSessionInKeychain: (session: Session): void => {
             console.log(
@@ -140,14 +147,10 @@ export class ClientViewModel
                     `hasAccessToken=${!!session.accessToken}, ` +
                     `hasRefreshToken=${!!session.refreshToken}`,
             );
+            // When saving session updates (e.g., token refresh), the passphrase is already in storage
             this.props.sessionStore.save(session);
         },
     });
-
-    private getClientBuilder = () =>
-        new ClientBuilder()
-            .slidingSyncVersionBuilder(SlidingSyncVersionBuilder.DiscoverNative)
-            .setSessionDelegate(this.getSessionDelegate());
 
     public async tryLoadSession(): Promise<void> {
         console.log(
@@ -166,26 +169,44 @@ export class ClientViewModel
                 throw new Error("No user ID provided");
             }
 
-            const sessions = this.props.sessionStore.load();
+            const sessions = await this.props.sessionStore.load();
             if (!sessions) throw new Error("No sessions found");
 
-            const session = sessions[this.props.userIdForLoading];
-            if (!session) {
+            const sessionData = sessions[this.props.userIdForLoading];
+            if (!sessionData) {
                 throw new Error("No session found");
             }
 
-            this.client = await this.getClientBuilder()
-                .serverNameOrHomeserverUrl(session.homeserverUrl)
-                .build();
-            await this.client.restoreSession(session);
+            // Try to restore the client - if this fails due to decryption errors,
+            // clean up the corrupted store to prevent getting stuck in a loop
+            try {
+                this.client = await restoreClient(
+                    sessionData.session,
+                    sessionData.passphrase,
+                    sessionData.storeId,
+                    this.getSessionDelegate(),
+                );
+            } catch (restoreError) {
+                console.error("Failed to restore client, cleaning up store");
+                // Delete the corrupted store
+                await this.props.sessionStore.deleteStoreById(
+                    sessionData.storeId,
+                );
+                // Clear the session data
+                await this.props.sessionStore.clear(
+                    this.props.userIdForLoading,
+                );
+                // Re-throw to be caught by outer catch
+                throw restoreError;
+            }
 
             const userId = this.client.userId();
             const displayName = await this.client.displayName();
             const avatarUrl = await this.client.avatarUrl();
 
-            console.log("Session restored, transitioning to LoggedIn");
+            console.log("Session restored");
+
             this.snapshot.merge({
-                clientState: ClientState.LoggedIn,
                 userId,
                 displayName,
                 avatarUrl,
@@ -197,6 +218,7 @@ export class ClientViewModel
             return;
         }
 
+        // Continue to sync after successful restore
         await this.sync();
     }
 
@@ -224,66 +246,10 @@ export class ClientViewModel
             userId: undefined,
             displayName: undefined,
             avatarUrl: undefined,
-
+            encryptionViewModel: undefined,
             // Keep loginViewModel so we can log in again
             loginViewModel: this.initLoginViewModel(),
         });
-    }
-
-    /**
-     * Initialize platform (SDK logging) - should only be called once
-     */
-    private initializePlatform(): void {
-        initPlatform(
-            {
-                logLevel: LogLevel.Trace,
-                traceLogPacks: [],
-                extraTargets: [],
-                writeToStdoutOrSystem: true,
-                writeToFiles: undefined,
-            },
-            true,
-        );
-    }
-
-    /**
-     * Complete login after authentication succeeds
-     * Saves session, updates state, and starts sync
-     */
-    private async completeLogin(): Promise<void> {
-        if (!this.client) {
-            throw new Error("Client not available");
-        }
-
-        // Save the session
-        this.props.sessionStore.save(this.client.session());
-
-        const userId = this.client.userId();
-        const displayName = await this.client.displayName();
-
-        // avatarUrl has thrown in some cases, handle gracefully
-        let avatarUrl: string | undefined;
-        try {
-            avatarUrl = await this.client.avatarUrl();
-        } catch (e) {
-            console.log("No avatar URL available for user");
-            avatarUrl = undefined;
-        }
-
-        this.snapshot.merge({
-            clientState: ClientState.LoggedIn,
-            userId,
-            displayName,
-            avatarUrl,
-        });
-        this.getSnapshot().loginViewModel?.setLoggingIn(false);
-
-        // Notify parent that login completed
-        if (this.props.onLogin && userId) {
-            this.props.onLogin(userId, this);
-        }
-
-        await this.sync();
     }
 
     /**
@@ -295,7 +261,11 @@ export class ClientViewModel
         this.getSnapshot().loginViewModel?.setLoggingIn(false);
     }
 
-    public async login({ username, password }: LoginParams): Promise<void> {
+    /**
+     * Perform login with the given credentials
+     * Supports both password and OIDC callback credentials
+     */
+    private async performLogin(credentials: Credential): Promise<void> {
         this.snapshot.merge({ clientState: ClientState.LoggingIn });
         this.getSnapshot().loginViewModel?.setLoggingIn(true);
 
@@ -306,13 +276,134 @@ export class ClientViewModel
         }
 
         try {
-            this.initializePlatform();
-            await this.client.login(username, password, "rust-sdk", undefined);
-            console.log("Password login successful");
-            await this.completeLogin();
+            initPlatform(
+                {
+                    logLevel: LogLevel.Trace,
+                    traceLogPacks: [],
+                    extraTargets: [],
+                    writeToStdoutOrSystem: true,
+                    writeToFiles: undefined,
+                },
+                true,
+            );
+
+            // Call the appropriate login method based on credential type
+            if (credentials.type === "password") {
+                await this.client.login(
+                    credentials.username,
+                    credentials.password,
+                    "rust-sdk",
+                    undefined,
+                );
+                console.log("Password login successful");
+            } else {
+                await this.client.loginWithOidcCallback(
+                    credentials.callbackUrl,
+                );
+                console.log("OIDC login successful");
+            }
+
+            // Validate that we're using native sliding sync (we don't support proxy)
+            validateNativeSlidingSync(this.client);
+            await this.startEncryptionSetup();
         } catch (e) {
-            this.handleLoginFailure(e, "Password login failed");
+            const errorMessage =
+                credentials.type === "password"
+                    ? "Password login failed"
+                    : "OIDC login failed";
+            this.handleLoginFailure(e, errorMessage);
             throw e;
+        }
+    }
+
+    public async login({ username, password }: LoginParams): Promise<void> {
+        await this.performLogin({ type: "password", username, password });
+    }
+
+    /**
+     * Complete OIDC login with the callback URL
+     * Called after the user successfully authenticates with the OIDC provider
+     * Expects client to already exist from checkHomeserverCapabilities
+     */
+    public async loginWithOidcCallback(callbackUrl: string): Promise<void> {
+        await this.performLogin({ type: "oidc", callbackUrl });
+    }
+
+    /**
+     * Complete login after authentication succeeds
+     * Saves session, updates state, and starts sync
+     */
+    private async startEncryptionSetup(): Promise<void> {
+        if (!this.client) {
+            throw new Error(
+                "No client available. Call checkHomeserverCapabilities first.",
+            );
+        }
+        const userId = this.client.userId();
+        const displayName = await this.client.displayName();
+        const avatarUrl = await this.client.avatarUrl();
+
+        // Create encryption view model now that we have a client
+        const encryptionViewModel = new EncryptionViewModel({
+            client: this.client,
+            onRecoveryEnabled: () => {
+                // When recovery is enabled, continue to sync with the recovery key
+                this.continueAfterEncryptionSetup();
+            },
+        });
+
+        this.snapshot.merge({
+            clientState: ClientState.SettingUpEncryption,
+            userId,
+            displayName,
+            avatarUrl,
+            encryptionViewModel,
+        });
+        this.getSnapshot().loginViewModel?.setLoggingIn(false);
+
+        // Notify parent that login completed
+        if (this.props.onLogin && userId) {
+            this.props.onLogin(userId, this);
+        }
+    }
+
+    /**
+     * Continue to sync after encryption setup
+     */
+    public async continueAfterEncryptionSetup(): Promise<void> {
+        const currentState = this.getSnapshot().clientState;
+        if (currentState !== ClientState.SettingUpEncryption) {
+            return;
+        }
+
+        if (!this.client) {
+            console.error("No client available during encryption setup");
+            return;
+        }
+
+        try {
+            const session = this.client.session();
+
+            console.log("Saving session with passphrase from auth flow");
+
+            // Use the passphrase that was generated when the authentication client was created
+            // This ensures we can decrypt the IndexedDB on restore
+            if (!this.storagePassphrase) {
+                throw new Error("No passphrase available from authentication");
+            }
+            this.props.sessionStore.save(
+                session,
+                this.storagePassphrase,
+                this.storageStoreId,
+            );
+            this.storagePassphrase = undefined;
+            this.storageStoreId = undefined;
+
+            // Start syncing directly - no need for intermediate LoggedIn state
+            await this.sync();
+        } catch (e) {
+            printRustError("Failed to save session after encryption setup", e);
+            this.snapshot.merge({ clientState: ClientState.Unknown });
         }
     }
 
@@ -324,10 +415,14 @@ export class ClientViewModel
         server: string,
     ): Promise<HomeserverLoginDetailsInterface> {
         try {
-            // Create the auth client - this will be reused for login
-            this.client = await this.getClientBuilder()
-                .serverNameOrHomeserverUrl(server)
-                .build();
+            const { client, passphrase, storeId } =
+                await createAuthenticationClient(
+                    server,
+                    this.getSessionDelegate(),
+                );
+            this.client = client;
+            this.storagePassphrase = passphrase;
+            this.storageStoreId = storeId;
 
             const loginDetails = await this.client.homeserverLoginDetails();
 
@@ -376,35 +471,6 @@ export class ClientViewModel
     }
 
     /**
-     * Complete OIDC login with the callback URL
-     * Called after the user successfully authenticates with the OIDC provider
-     * Expects client to already exist from checkHomeserverCapabilities
-     */
-    public async loginWithOidcCallback(
-        callbackUrl: string,
-        _homeserverUrl: string,
-    ): Promise<void> {
-        this.snapshot.merge({ clientState: ClientState.LoggingIn });
-        this.getSnapshot().loginViewModel?.setLoggingIn(true);
-
-        if (!this.client) {
-            throw new Error(
-                "No client available. Call checkHomeserverCapabilities first.",
-            );
-        }
-
-        try {
-            this.initializePlatform();
-            await this.client.loginWithOidcCallback(callbackUrl);
-            console.log("OIDC login successful");
-            await this.completeLogin();
-        } catch (e) {
-            this.handleLoginFailure(e, "OIDC login failed");
-            throw e;
-        }
-    }
-
-    /**
      * Abort an in-progress OIDC login
      * Should be called if the user cancels the login flow
      */
@@ -421,6 +487,8 @@ export class ClientViewModel
             printRustError("Failed to abort OIDC login", e);
         } finally {
             this.oidcAuthData = undefined;
+            this.storagePassphrase = undefined;
+            this.storageStoreId = undefined;
             this.snapshot.merge({ clientState: ClientState.LoggedOut });
             this.getSnapshot().loginViewModel?.setLoggingIn(false);
         }
