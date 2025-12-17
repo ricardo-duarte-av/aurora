@@ -26,6 +26,7 @@ import type {
     Props,
     RoomListViewActions,
     RoomListViewSnapshot,
+    RoomSection,
 } from "./room-list-view.types";
 
 export class RoomListViewModel
@@ -49,6 +50,11 @@ export class RoomListViewModel
 
         super(props, {
             rooms: [],
+            sections: [
+                { name: "Favourites", rooms: [], expanded: true },
+                { name: "Other", rooms: [], expanded: true },
+                { name: "Low Priority", rooms: [], expanded: true },
+            ],
             selectedFilter: initialFilter,
             filters: initialFilters,
             loading: true,
@@ -81,6 +87,45 @@ export class RoomListViewModel
                 name: value.name,
                 key: key as SupportedFilters,
             }));
+    }
+
+    private computeSections(
+        rooms: RoomSummary[],
+        currentSections: RoomSection[],
+    ): RoomSection[] {
+        const favourites: RoomSummary[] = [];
+        const other: RoomSummary[] = [];
+        const lowPriority: RoomSummary[] = [];
+
+        // Categorize rooms based on isFavourite flag
+        // Note: We don't have isLowPriority in RoomInfo yet, so all non-favourites go to "Other"
+        // This can be extended in the future to check for low priority tags
+        for (const room of rooms) {
+            if (room.isFavourite) {
+                favourites.push(room);
+            } else {
+                // TODO: Check for low priority tag when SDK exposes it
+                other.push(room);
+            }
+        }
+
+        return [
+            {
+                name: "Favourites",
+                rooms: favourites,
+                expanded: currentSections[0]?.expanded ?? true,
+            },
+            {
+                name: "Other",
+                rooms: other,
+                expanded: currentSections[1]?.expanded ?? true,
+            },
+            {
+                name: "Low Priority",
+                rooms: lowPriority,
+                expanded: currentSections[2]?.expanded ?? true,
+            },
+        ];
     }
 
     private async applyDiff(
@@ -167,7 +212,11 @@ export class RoomListViewModel
     ): Promise<void> {
         const currentSnapshot = this.getSnapshot();
         const newRooms = await this.applyDiff(currentSnapshot.rooms, updates);
-        this.snapshot.merge({ rooms: newRooms });
+        const newSections = this.computeSections(
+            newRooms,
+            currentSnapshot.sections,
+        );
+        this.snapshot.merge({ rooms: newRooms, sections: newSections });
     }
 
     private handleLoadingStateChange = (state: RoomListLoadingState): void => {
@@ -284,5 +333,13 @@ export class RoomListViewModel
             this.getSnapshot().selectedFilter ===
             RoomListEntriesDynamicFilterKind_Tags.NonLeft
         );
+    };
+
+    public toggleSection = (index: number): void => {
+        const currentSnapshot = this.getSnapshot();
+        const newSections = currentSnapshot.sections.map((section, i) =>
+            i === index ? { ...section, expanded: !section.expanded } : section,
+        );
+        this.snapshot.merge({ sections: newSections });
     };
 }
