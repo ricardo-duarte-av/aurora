@@ -356,7 +356,7 @@ export class ClientViewModel
         try {
             const oidcConfig = getOidcConfiguration();
 
-            // Use "Consent" prompt for login (Create is broken per element-x-ios)
+            // Use "Consent" prompt for login
             const authData = await this.client.urlForOidc(
                 oidcConfig,
                 OidcPrompt.Consent.new(),

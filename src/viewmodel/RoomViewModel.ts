@@ -10,7 +10,7 @@
 import { BaseViewModel } from "@element-hq/web-shared-components";
 import { MemberListViewModel } from "./MemberListViewModel";
 import { TimelineViewModel } from "./TimelineViewModel";
-import { RoomItemViewModel } from "./RoomListItemViewModel";
+import { buildRoomSummary, type RoomSummary } from "./RoomSummary";
 import type { Props, RoomViewSnapshot } from "./room-view.types";
 
 export class RoomViewModel extends BaseViewModel<RoomViewSnapshot, Props> {
@@ -20,17 +20,55 @@ export class RoomViewModel extends BaseViewModel<RoomViewSnapshot, Props> {
         const memberListViewModel = new MemberListViewModel({
             room: props.room,
         });
-        const roomHeaderViewModel = new RoomItemViewModel({ room: props.room });
 
         super(props, {
             timelineViewModel,
             memberListViewModel,
-            roomHeaderViewModel,
+            roomHeaderViewModel: undefined, // Will be set asynchronously
             roomId,
         });
 
         this.disposables.track(timelineViewModel);
         this.disposables.track(memberListViewModel);
-        this.disposables.track(roomHeaderViewModel);
+
+        // Load room summary for header and subscribe to updates
+        this.loadRoomHeader();
+        this.subscribeToRoomInfoUpdates();
+    }
+
+    private async loadRoomHeader(): Promise<void> {
+        const [roomInfo, latestEvent] = await Promise.all([
+            this.props.room.roomInfo(),
+            this.props.room.latestEvent(),
+        ]);
+
+        const roomHeaderViewModel = buildRoomSummary(
+            this.props.room,
+            roomInfo,
+            latestEvent,
+        );
+
+        this.snapshot.merge({ roomHeaderViewModel });
+    }
+
+    private subscribeToRoomInfoUpdates(): void {
+        // Subscribe to room info updates to keep header reactive
+        const roomInfoObservationToken =
+            this.props.room.subscribeToRoomInfoUpdates({
+                call: async (roomInfo) => {
+                    // When room info changes, rebuild the summary
+                    const latestEvent = await this.props.room.latestEvent();
+                    const roomHeaderViewModel = buildRoomSummary(
+                        this.props.room,
+                        roomInfo,
+                        latestEvent,
+                    );
+                    this.snapshot.merge({ roomHeaderViewModel });
+                },
+            });
+
+        this.disposables.track(() => {
+            roomInfoObservationToken.cancel();
+        });
     }
 }

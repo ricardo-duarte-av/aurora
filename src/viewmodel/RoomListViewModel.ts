@@ -10,18 +10,18 @@
 import { debounce } from "lodash-es";
 import type { ListRange } from "react-virtuoso";
 import { BaseViewModel } from "@element-hq/web-shared-components";
-import { applyDiff } from "../DiffUtils";
 import { FILTERS, type SupportedFilters } from "../Filter";
 import {
     type RoomInterface,
     type RoomListDynamicEntriesControllerInterface,
     RoomListEntriesDynamicFilterKind_Tags,
     type RoomListEntriesUpdate,
+    RoomListEntriesUpdate_Tags,
     type RoomListEntriesWithDynamicAdaptersResultInterface,
     RoomListLoadingState,
     type TaskHandleInterface,
 } from "../index.web";
-import { RoomItemViewModel } from "./RoomListItemViewModel";
+import { buildRoomSummary, type RoomSummary } from "./RoomSummary";
 import type {
     Props,
     RoomListViewActions,
@@ -32,14 +32,16 @@ export class RoomListViewModel
     extends BaseViewModel<RoomListViewSnapshot, Props>
     implements RoomListViewActions
 {
-    private running = false;
     private controller?: RoomListDynamicEntriesControllerInterface;
     private activeRoom?: string;
     private stateStream?: TaskHandleInterface;
     private visibleRooms: string[] = [];
     private roomListEntriesWithDynamicAdapters?: RoomListEntriesWithDynamicAdaptersResultInterface;
-    private lastLoadMoreCount?: number;
-    private canLoadMore = true;
+    private diffQueue: Promise<void> = Promise.resolve();
+    private hasSetupEntries = false;
+    private roomList?: Awaited<
+        ReturnType<typeof this.props.roomListService.allRooms>
+    >;
 
     public constructor(props: Props) {
         const initialFilter = RoomListEntriesDynamicFilterKind_Tags.NonLeft;
@@ -47,19 +49,25 @@ export class RoomListViewModel
 
         super(props, {
             rooms: [],
-            numRooms: -1,
             selectedFilter: initialFilter,
-            loadingState: undefined,
             filters: initialFilters,
-            canLoadMore: true,
+            loading: true,
             currentRoomId: undefined,
         });
 
         this.run();
     }
 
-    private parseRoom(room: RoomInterface): RoomItemViewModel {
-        return new RoomItemViewModel({ room });
+    private async parseRoom(room: RoomInterface): Promise<RoomSummary> {
+        // This prevents showing empty names while encryption decrypts
+        const [roomInfo, latestEvent] = await Promise.all([
+            room.roomInfo(),
+            room.latestEvent(),
+        ]);
+
+        const summary = buildRoomSummary(room, roomInfo, latestEvent);
+
+        return summary;
     }
 
     private static computeFilters(selectedFilter: SupportedFilters) {
@@ -75,74 +83,148 @@ export class RoomListViewModel
             }));
     }
 
-    public onUpdate = async (
+    private async applyDiff(
+        items: RoomSummary[],
         updates: RoomListEntriesUpdate[],
-    ): Promise<void> => {
-        const currentSnapshot = this.getSnapshot();
-        const newRooms = applyDiff(
-            currentSnapshot.rooms,
-            updates,
-            this.parseRoom,
-        );
+    ): Promise<RoomSummary[]> {
+        let newItems = [...items];
 
-        // Check if pagination succeeded
-        if (this.lastLoadMoreCount !== undefined) {
-            if (newRooms.length > this.lastLoadMoreCount) {
-                // Rooms grew - we can try loading more again
-                this.lastLoadMoreCount = undefined;
-                this.canLoadMore = true;
-            } else if (newRooms.length === this.lastLoadMoreCount) {
-                // Rooms didn't grow - we've reached the end
-                this.canLoadMore = false;
+        for (const update of updates) {
+            switch (update.tag) {
+                case RoomListEntriesUpdate_Tags.Set:
+                    newItems[update.inner.index] = await this.parseRoom(
+                        update.inner.value,
+                    );
+                    newItems = [...newItems];
+                    break;
+                case RoomListEntriesUpdate_Tags.PushBack:
+                    newItems = [
+                        ...newItems,
+                        await this.parseRoom(update.inner.value),
+                    ];
+                    break;
+                case RoomListEntriesUpdate_Tags.PushFront:
+                    newItems = [
+                        await this.parseRoom(update.inner.value),
+                        ...newItems,
+                    ];
+                    break;
+                case RoomListEntriesUpdate_Tags.Clear:
+                    newItems = [];
+                    break;
+                case RoomListEntriesUpdate_Tags.PopFront:
+                    newItems.shift();
+                    newItems = [...newItems];
+                    break;
+                case RoomListEntriesUpdate_Tags.PopBack:
+                    newItems.pop();
+                    newItems = [...newItems];
+                    break;
+                case RoomListEntriesUpdate_Tags.Insert:
+                    newItems.splice(
+                        update.inner.index,
+                        0,
+                        await this.parseRoom(update.inner.value),
+                    );
+                    newItems = [...newItems];
+                    break;
+                case RoomListEntriesUpdate_Tags.Remove:
+                    newItems.splice(update.inner.index, 1);
+                    newItems = [...newItems];
+                    break;
+                case RoomListEntriesUpdate_Tags.Truncate:
+                    newItems = newItems.slice(0, update.inner.length);
+                    break;
+                case RoomListEntriesUpdate_Tags.Reset:
+                    newItems = await Promise.all(
+                        update.inner.values.map((v) => this.parseRoom(v)),
+                    );
+                    break;
+                case RoomListEntriesUpdate_Tags.Append:
+                    newItems = [
+                        ...newItems,
+                        ...(await Promise.all(
+                            update.inner.values.map((v) => this.parseRoom(v)),
+                        )),
+                    ];
+                    break;
             }
         }
 
-        this.snapshot.merge({
-            rooms: newRooms,
-            canLoadMore: this.canLoadMore,
-        });
+        return newItems;
+    }
+
+    public onUpdate = async (
+        updates: RoomListEntriesUpdate[],
+    ): Promise<void> => {
+        this.diffQueue = this.diffQueue.then(() =>
+            this.processDiffUpdates(updates),
+        );
     };
 
-    private onLoadingStateUpdate = (state: RoomListLoadingState) => {
-        this.snapshot.merge({ loadingState: state });
+    private async processDiffUpdates(
+        updates: RoomListEntriesUpdate[],
+    ): Promise<void> {
+        const currentSnapshot = this.getSnapshot();
+        const newRooms = await this.applyDiff(currentSnapshot.rooms, updates);
+        this.snapshot.merge({ rooms: newRooms });
+    }
 
-        if (
-            RoomListLoadingState.Loaded.instanceOf(state) &&
-            state.inner.maximumNumberOfRooms !== undefined
-        ) {
-            this.snapshot.merge({
-                numRooms: state.inner.maximumNumberOfRooms,
-            });
+    private handleLoadingStateChange = (state: RoomListLoadingState): void => {
+        if (RoomListLoadingState.NotLoaded.instanceOf(state)) {
+            this.snapshot.merge({ loading: true });
+        } else if (RoomListLoadingState.Loaded.instanceOf(state)) {
+            this.snapshot.merge({ loading: false });
+
+            // Only setup entries once, even if Loaded fires multiple times
+            if (!this.hasSetupEntries) {
+                this.hasSetupEntries = true;
+                this.setupEntries();
+            }
         }
     };
 
     private run = (): void => {
         (async () => {
-            this.running = true;
             const abortController = new AbortController();
-            const roomList = await this.props.roomListService.allRooms({
+            this.roomList = await this.props.roomListService.allRooms({
                 signal: abortController.signal,
             });
-            const { state, stateStream } = roomList.loadingState({
-                onUpdate: this.onLoadingStateUpdate,
+
+            // Subscribe to loading state to understand when rooms are ready
+            const { state, stateStream } = this.roomList.loadingState({
+                onUpdate: this.handleLoadingStateChange,
             });
             this.stateStream = stateStream;
-            this.snapshot.merge({ loadingState: state });
 
-            this.roomListEntriesWithDynamicAdapters ||=
-                roomList.entriesWithDynamicAdapters(50, this);
-            this.controller =
-                this.roomListEntriesWithDynamicAdapters.controller();
-
-            const selectedFilter = this.getSnapshot().selectedFilter;
-            this.controller.setFilter(FILTERS[selectedFilter].method);
-            this.controller.addOnePage();
+            // Handle initial state
+            this.handleLoadingStateChange(state);
         })();
 
         this.disposables.track(() => {
             this.stateStream?.cancel();
-            this.running = false;
         });
+    };
+
+    private setupEntries = (): void => {
+        if (this.roomListEntriesWithDynamicAdapters) {
+            return;
+        }
+
+        if (!this.roomList) {
+            console.error(
+                "[RoomListViewModel] Cannot setup entries: roomList not initialized",
+            );
+            return;
+        }
+
+        this.roomListEntriesWithDynamicAdapters =
+            this.roomList.entriesWithDynamicAdapters(50, this);
+        this.controller = this.roomListEntriesWithDynamicAdapters.controller();
+
+        const selectedFilter = this.getSnapshot().selectedFilter;
+        this.controller.setFilter(FILTERS[selectedFilter].method);
+        this.controller.addOnePage();
     };
 
     private subscribeToRooms = (): void => {
@@ -169,29 +251,12 @@ export class RoomListViewModel
         const currentRooms = this.getSnapshot().rooms;
         this.visibleRooms = currentRooms
             .slice(range.startIndex, range.endIndex)
-            .map((room) => room.getSnapshot().roomId);
+            .map((room) => room.id);
         this.subscribeToRoomsDebounced();
     };
 
     public loadMore = (): void => {
-        const currentRoomCount = this.getSnapshot().rooms.length;
-
-        // Check if we can load more
-        if (!this.canLoadMore) {
-            return;
-        }
-
-        // Prevent calling loadMore multiple times before rooms are actually added
-        if (this.lastLoadMoreCount === currentRoomCount) {
-            return;
-        }
-
-        if (!this.controller) {
-            return;
-        }
-
-        this.lastLoadMoreCount = currentRoomCount;
-        this.controller.addOnePage();
+        this.controller?.addOnePage();
     };
 
     public toggleFilter = (filter: SupportedFilters): void => {

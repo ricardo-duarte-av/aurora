@@ -9,9 +9,8 @@
 
 import type { ListRange } from "react-virtuoso";
 import type { SupportedFilters } from "../Filter";
-import type { RoomItemViewModel } from "./RoomListItemViewModel";
+import type { RoomSummary } from "./RoomSummary";
 import type {
-    RoomListLoadingState,
     RoomListServiceInterface,
     SyncServiceInterface,
 } from "../index.web";
@@ -34,23 +33,17 @@ export interface FilterInfo {
  * Snapshot represents the complete state of the room list view
  */
 export interface RoomListViewSnapshot {
-    /** List of room list items */
-    rooms: Array<RoomItemViewModel>;
-
-    /** Total number of rooms available */
-    numRooms: number;
+    /** List of room summaries */
+    rooms: Array<RoomSummary>;
 
     /** Currently selected filter */
     selectedFilter: SupportedFilters;
 
-    /** Current loading state */
-    loadingState?: RoomListLoadingState;
-
     /** Available filters for the room list */
     filters: FilterInfo[];
 
-    /** Whether more rooms can be loaded via pagination */
-    canLoadMore: boolean;
+    /** Whether the room list is currently loading */
+    loading: boolean;
 
     /** Currently active room ID */
     currentRoomId?: string;
