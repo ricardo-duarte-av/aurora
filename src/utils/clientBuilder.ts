@@ -20,6 +20,7 @@ import {
     IndexedDbStoreBuilder,
     BackupDownloadStrategy,
 } from "../index.web";
+import { SessionStore } from "../SessionStore";
 
 interface BaseBuilderOptions {
     sessionDelegate: ClientSessionDelegate;
@@ -31,7 +32,6 @@ interface BaseBuilderOptions {
 
 /**
  * Create a base client builder with common configuration
- * This mirrors the Element X iOS baseBuilder pattern
  */
 function createBaseClientBuilder(
     options: BaseBuilderOptions,
@@ -78,7 +78,6 @@ function createBaseClientBuilder(
 
 /**
  * Generates a random passphrase for IndexedDB encryption
- * Similar to encryptionKeyProvider.generateKey() in element-x-ios
  */
 function generatePassphrase(): string {
     const array = new Uint8Array(32);
@@ -87,16 +86,8 @@ function generatePassphrase(): string {
 }
 
 /**
- * Generates a unique store ID using UUID
- * Similar to iOS's SessionDirectories init() which uses UUID().uuidString
- */
-function generateStoreId(): string {
-    return crypto.randomUUID();
-}
-
-/**
  * Creates an authentication client for login flows
- * Each auth session gets a unique store ID (similar to iOS's SessionDirectories with UUID)
+ * Each auth session gets a unique store ID
  * Returns the client, passphrase, and storeId to be saved with the session
  */
 export async function createAuthenticationClient(
@@ -106,16 +97,14 @@ export async function createAuthenticationClient(
     // Generate passphrase for this authentication session
     const passphrase = generatePassphrase();
 
-    // Generate a unique store ID (similar to iOS's UUID-based session directories)
-    const storeId = generateStoreId();
+    // Generate a unique store ID
+    const sessionStore = new SessionStore();
+    const storeId = sessionStore.generateStoreId();
 
     // Create store name from the ID
-    const storeName = `aurora-store-${storeId}`;
+    const storeName = sessionStore.getStoreName(storeId);
 
     console.log("[createAuthenticationClient] Creating new auth client");
-    console.log(`[createAuthenticationClient] - passphrase: ${passphrase}`);
-    console.log(`[createAuthenticationClient] - storeId: ${storeId}`);
-    console.log(`[createAuthenticationClient] - storeName: ${storeName}`);
 
     // Create client with unique store and encryption enabled
     const client = await createBaseClientBuilder({
@@ -133,12 +122,9 @@ export async function createAuthenticationClient(
 
 /**
  * Restores a client from a saved session
- * Similar to UserSessionStore pattern in element-x-ios
  *
  * IMPORTANT: Uses the same storeId that was generated during authentication
  * to access the correct isolated IndexedDB store for this user.
- *
- * Throws an error if restoration fails (e.g., wrong passphrase, corrupted store)
  */
 export async function restoreClient(
     session: SessionInterface,
@@ -147,19 +133,16 @@ export async function restoreClient(
     sessionDelegate: ClientSessionDelegate,
 ): Promise<ClientInterface> {
     console.log("[restoreClient] Starting restoration");
-    console.log(`[restoreClient] - userId: ${session.userId}`);
-    console.log(`[restoreClient] - passphrase: ${passphrase}`);
-    console.log(`[restoreClient] - storeId: ${storeId}`);
 
-    // iOS explicitly sets the sliding sync version to .native when restoring
-    // See: RestorationToken.swift - slidingSyncVersion: .native
+    // Explicitly set the sliding sync version to .native when restoring
     const sessionWithSlidingSync = {
         ...session,
         slidingSyncVersion: SlidingSyncVersion.Native,
     };
 
     // Use the same store name that was created during authentication
-    const storeName = `aurora-store-${storeId}`;
+    const sessionStore = new SessionStore();
+    const storeName = sessionStore.getStoreName(storeId);
     console.log(`[restoreClient] - storeName: ${storeName}`);
 
     const builder: ClientBuilderInterface = createBaseClientBuilder({

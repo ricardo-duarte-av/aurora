@@ -27,7 +27,6 @@ import { RecoveryKeyEntryScreen } from "./RecoveryKeyEntryScreen";
 import { SetupRecoveryScreen } from "./SetupRecoveryScreen";
 import { EnablingRecoveryScreen } from "./EnablingRecoveryScreen";
 import { SaveRecoveryKeyScreen } from "./SaveRecoveryKeyScreen";
-import { RecoveryCompleteScreen } from "./RecoveryCompleteScreen";
 import { ResetIdentityWarningScreen } from "./ResetIdentityWarningScreen";
 import { ResetIdentityPasswordScreen } from "./ResetIdentityPasswordScreen";
 import styles from "./Encryption.module.css";

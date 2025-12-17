@@ -128,15 +128,15 @@ export class ClientViewModel
             console.log(
                 `[SessionDelegate] SDK requesting session for user: ${userId}`,
             );
-            const sessions = this.props.sessionStore.load();
+            const sessions = this.props.sessionStore.loadSessionsSync();
             if (!sessions || !sessions[userId]) {
                 throw new Error(`No session found for user ${userId}`);
             }
-            const session = sessions[userId];
+            const sessionData = sessions[userId];
             console.log(
-                `[SessionDelegate] Returning session with oidcData: ${!!session.oidcData}`,
+                `[SessionDelegate] Returning session with oidcData: ${!!sessionData.session.oidcData}`,
             );
-            return session;
+            return sessionData.session;
         },
         saveSessionInKeychain: (session: Session): void => {
             console.log(
@@ -253,45 +253,6 @@ export class ClientViewModel
     }
 
     /**
-     * Complete login after authentication succeeds
-     * Saves session, updates state, and starts sync
-     */
-    private async completeLogin(): Promise<void> {
-        if (!this.client) {
-            throw new Error("Client not available");
-        }
-
-        // Save the session
-        this.props.sessionStore.save(this.client.session());
-
-        const userId = this.client.userId();
-        const displayName = await this.client.displayName();
-
-        // avatarUrl has thrown in some cases, handle gracefully
-        let avatarUrl: string | undefined;
-        try {
-            avatarUrl = await this.client.avatarUrl();
-        } catch (e) {
-            console.log("No avatar URL available for user");
-            avatarUrl = undefined;
-        }
-
-        this.snapshot.merge({
-            userId,
-            displayName,
-            avatarUrl,
-        });
-        this.getSnapshot().loginViewModel?.setLoggingIn(false);
-
-        // Notify parent that login completed
-        if (this.props.onLogin && userId) {
-            this.props.onLogin(userId, this);
-        }
-
-        await this.sync();
-    }
-
-    /**
      * Handle login failure
      */
     private handleLoginFailure(error: unknown, errorMessage: string): void {
@@ -385,14 +346,11 @@ export class ClientViewModel
         // Create encryption view model now that we have a client
         const encryptionViewModel = new EncryptionViewModel({
             client: this.client,
-            onRecoveryEnabled: (recoveryKey: string) => {
+            onRecoveryEnabled: () => {
                 // When recovery is enabled, continue to sync with the recovery key
-                this.continueAfterEncryptionSetup(recoveryKey);
+                this.continueAfterEncryptionSetup();
             },
         });
-
-        // Check if encryption recovery is already enabled
-        const recoveryState = encryptionViewModel.getSnapshot().recoveryState;
 
         this.snapshot.merge({
             clientState: ClientState.SettingUpEncryption,
@@ -411,12 +369,8 @@ export class ClientViewModel
 
     /**
      * Continue to sync after encryption setup
-     * This is called when the user completes encryption setup with their recovery key
-     * @param recoveryKey - The recovery key to use as the IndexedDB passphrase
      */
-    public async continueAfterEncryptionSetup(
-        recoveryKey: string,
-    ): Promise<void> {
+    public async continueAfterEncryptionSetup(): Promise<void> {
         const currentState = this.getSnapshot().clientState;
         if (currentState !== ClientState.SettingUpEncryption) {
             return;

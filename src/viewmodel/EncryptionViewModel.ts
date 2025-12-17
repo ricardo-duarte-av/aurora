@@ -22,7 +22,7 @@ import type {
 import {
     AuthData,
     AuthDataPasswordDetails,
-    EnableRecoveryProgress,
+    type EnableRecoveryProgress,
     EnableRecoveryProgress_Tags,
 } from "../index.web.ts";
 import { printRustError } from "../utils";
@@ -49,7 +49,7 @@ export interface EncryptionViewActions {
 
 export interface EncryptionViewModelProps {
     client: ClientInterface;
-    onRecoveryEnabled?: (recoveryKey: string) => void; // Called when recovery is successfully enabled, passes the recovery key
+    onRecoveryEnabled?: () => void; // Called when recovery is successfully enabled
 }
 
 export class EncryptionViewModel
@@ -89,7 +89,7 @@ export class EncryptionViewModel
 
     /**
      * Update the flow based on current state
-     * Following iOS logic: show ConfirmIdentity when recovery enabled/incomplete
+     * Show ConfirmIdentity when recovery enabled/incomplete
      */
     private updateFlow(): void {
         const snapshot = this.getSnapshot();
@@ -160,7 +160,7 @@ export class EncryptionViewModel
             availableActions.push(IdentityConfirmationAction.Recovery);
         }
 
-        // If recovery is enabled or incomplete, show ConfirmIdentity (like iOS)
+        // If recovery is enabled or incomplete, show ConfirmIdentity
         // This is the key fix: don't show Complete screen automatically
         if (snapshot.recoveryState === 1 || snapshot.recoveryState === 3) {
             this.snapshot.merge({
@@ -181,7 +181,7 @@ export class EncryptionViewModel
             return;
         }
 
-        // No backup on server - show ConfirmIdentity (matching iOS)
+        // No backup on server - show ConfirmIdentity
         // User can choose to verify with another device or reset
         // Only show SetupRecovery after explicit reset action
         this.snapshot.merge({
@@ -311,8 +311,6 @@ export class EncryptionViewModel
                                 flow: EncryptionFlow.SaveRecoveryKey,
                             });
 
-                            // Don't call onRecoveryEnabled here - wait for user to dismiss the key
-                            // The callback will be triggered in dismissRecoveryKey()
                             break;
                     }
                 },
@@ -354,10 +352,7 @@ export class EncryptionViewModel
             });
 
             // Notify that recovery is complete (if callback provided)
-            // Pass the recovery key so it can be used as the IndexedDB passphrase
-            if (this.props.onRecoveryEnabled) {
-                this.props.onRecoveryEnabled(recoveryKey);
-            }
+            this.props.onRecoveryEnabled?.();
         } catch (e) {
             printRustError("Failed to recover", e);
             this.snapshot.merge({
@@ -615,9 +610,7 @@ export class EncryptionViewModel
         });
 
         // Now that user has dismissed the key, trigger the callback to proceed
-        if (this.props.onRecoveryEnabled && currentRecoveryKey) {
-            this.props.onRecoveryEnabled(currentRecoveryKey);
-        }
+        this.props.onRecoveryEnabled?.();
     }
 
     /**

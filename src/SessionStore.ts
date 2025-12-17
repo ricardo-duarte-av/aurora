@@ -16,7 +16,7 @@ import { Session } from "./generated/matrix_sdk_ffi";
 export interface SessionData {
     session: Session;
     passphrase: string;
-    /** Unique identifier for the IndexedDB store (e.g., "abc123") */
+    /** Unique identifier for the IndexedDB store*/
     storeId: string;
 }
 
@@ -36,17 +36,27 @@ export class SessionStore {
             sessionsV3[key] = {
                 session: Session.new(data.session),
                 passphrase: data.passphrase,
-                storeId: data.storeId || this.generateStoreId(), // Migrate old sessions without storeId
+                storeId: data.storeId,
             };
         }
 
         return sessionsV3;
     }
 
-    private generateStoreId(): string {
-        // Generate a UUID for the store ID, matching iOS's UUID().uuidString approach
-        // See: SessionDirectories.swift - init() uses UUID().uuidString
+    private saveSessions(sessions: Record<string, SessionData>): void {
+        localStorage.setItem("mx_session_v3", JSON.stringify(sessions));
+    }
+
+    generateStoreId(): string {
+        // Generate a UUID for the store ID
         return crypto.randomUUID();
+    }
+
+    /**
+     * Generate the IndexedDB store name from a store ID
+     */
+    getStoreName(storeId: string): string {
+        return `aurora-store-${storeId}`;
     }
 
     private async clearOldSessions() {
@@ -60,6 +70,14 @@ export class SessionStore {
 
     async load(): Promise<Record<string, SessionData> | undefined> {
         await this.clearOldSessions();
+        return this.loadSessions();
+    }
+
+    /**
+     * Synchronously load sessions from localStorage
+     * Used by session delegate which requires sync access
+     */
+    loadSessionsSync(): Record<string, SessionData> | undefined {
         return this.loadSessions();
     }
 
@@ -78,10 +96,13 @@ export class SessionStore {
         }
 
         // If no storeId provided, use the existing one or generate a new one
-        const finalStoreId =
-            storeId ??
-            sessions[session.userId]?.storeId ??
-            this.generateStoreId();
+        const finalStoreId = storeId ?? sessions[session.userId]?.storeId;
+
+        if (!finalStoreId) {
+            throw new Error(
+                `No storeId provided and no existing storeId found for user ${session.userId}`,
+            );
+        }
 
         console.log(`[SessionStore] Saving session for ${session.userId}`);
 
@@ -90,7 +111,7 @@ export class SessionStore {
             passphrase: finalPassphrase,
             storeId: finalStoreId,
         };
-        localStorage.setItem("mx_session_v3", JSON.stringify(sessions));
+        this.saveSessions(sessions);
     }
 
     async clear(userId: string): Promise<void> {
@@ -104,7 +125,7 @@ export class SessionStore {
         }
 
         delete sessions[userId];
-        localStorage.setItem("mx_session_v3", JSON.stringify(sessions));
+        this.saveSessions(sessions);
     }
 
     /**
@@ -117,10 +138,9 @@ export class SessionStore {
 
     /**
      * Delete an IndexedDB store by its ID
-     * Similar to iOS's SessionDirectories.delete()
      */
     private async deleteStore(storeId: string): Promise<void> {
-        const storeName = `aurora-store-${storeId}`;
+        const storeName = this.getStoreName(storeId);
         console.log(`Deleting IndexedDB store: ${storeName}`);
 
         return new Promise<void>((resolve) => {
