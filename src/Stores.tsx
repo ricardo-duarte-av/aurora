@@ -13,6 +13,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import { SessionStore } from "./SessionStore";
@@ -30,6 +31,7 @@ export function Stores({ children }: PropsWithChildren) {
     const [activeClientViewModel, setActiveClientViewModel] =
         useState<ClientViewModel>();
     const sessionStore = useMemo(() => new SessionStore(), []);
+    const loadInitiated = useRef(false);
 
     const addClientStore = useCallback(
         (userId: string, viewModel: ClientViewModel) => {
@@ -39,6 +41,17 @@ export function Stores({ children }: PropsWithChildren) {
     );
 
     useEffect(() => {
+        // Guard against duplicate calls in strict mode
+        if (loadInitiated.current) {
+            console.log(
+                "[Stores] Load already initiated, skipping duplicate call",
+            );
+            return;
+        }
+
+        loadInitiated.current = true;
+        console.log("[Stores] Starting load...");
+
         const load = async () => {
             const sessions = await sessionStore.load();
 

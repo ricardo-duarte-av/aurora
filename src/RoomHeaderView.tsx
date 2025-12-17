@@ -9,42 +9,30 @@ import "./RoomHeaderView.css";
 import "./viewmodel/TimelineViewModel";
 import { Avatar } from "@vector-im/compound-web";
 import type React from "react";
-import { useViewModel } from "@element-hq/web-shared-components";
-import type { RoomItemViewModel } from "./viewmodel/RoomListItemViewModel";
+import type { RoomSummary } from "./viewmodel/RoomSummary";
 
 type RoomHeaderViewProps = {
-    roomHeaderViewModel: RoomItemViewModel;
+    roomHeaderViewModel?: RoomSummary;
 };
-
-function mxcToUrl(mxcUrl: string): string {
-    return `${mxcUrl.replace(
-        /^mxc:\/\//,
-        "https://matrix.org/_matrix/media/v3/thumbnail/",
-    )}?width=48&height=48`;
-}
 
 export const RoomHeaderView: React.FC<RoomHeaderViewProps> = ({
     roomHeaderViewModel,
 }) => {
-    const roomInfo = useViewModel(roomHeaderViewModel);
+    if (!roomHeaderViewModel) {
+        return null;
+    }
 
     return (
         <div className="mx_RoomHeader">
             <div className="mx_RoomHeader_avatar">
                 <Avatar
-                    id={roomInfo.roomId}
-                    name={roomInfo?.info?.displayName || ""}
-                    src={
-                        roomInfo?.info?.avatarUrl
-                            ? mxcToUrl(roomInfo.info.avatarUrl)
-                            : ""
-                    }
+                    id={roomHeaderViewModel.id}
+                    name={roomHeaderViewModel.name}
+                    src={roomHeaderViewModel.avatar || ""}
                     size="40px"
                 />
             </div>
-            <div className="mx_RoomHeader_name">
-                {roomInfo?.info?.displayName?.trim() || ""}
-            </div>
+            <div className="mx_RoomHeader_name">{roomHeaderViewModel.name}</div>
         </div>
     );
 };

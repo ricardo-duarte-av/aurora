@@ -7,7 +7,7 @@
 
 import "./RoomListView.css";
 import { InlineSpinner } from "@vector-im/compound-web";
-import { type JSX, useCallback } from "react";
+import type { JSX } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { useViewModel } from "@element-hq/web-shared-components";
 import { RoomListItemView } from "./RoomListItemView";
@@ -25,10 +25,24 @@ export function RoomListView({
     vm,
     onRoomSelected,
 }: RoomListViewProps): JSX.Element {
-    const { rooms, canLoadMore, currentRoomId } = useViewModel(vm);
+    const { rooms, currentRoomId, loading } = useViewModel(vm);
 
-    // Show spinner if we're in the "All" filter AND can load more rooms
-    const showFooter = vm.isAllFilter() && canLoadMore;
+    // Show centered spinner while waiting for room list to load
+    if (loading) {
+        return (
+            <div
+                className="mx_RoomListView"
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                }}
+            >
+                <InlineSpinner />
+            </div>
+        );
+    }
 
     // The first div is needed to make the virtualized list take all the remaining space and scroll correctly
     return (
@@ -41,33 +55,15 @@ export function RoomListView({
                 context={{ currentRoomId, onRoomSelected }}
                 rangeChanged={vm.rangeChanged}
                 itemContent={(_, room, { currentRoomId, onRoomSelected }) => {
-                    const roomId = room.getSnapshot().roomId;
                     return (
                         <RoomListItemView
                             room={room}
-                            isSelected={currentRoomId === roomId}
-                            onClick={() => onRoomSelected(roomId)}
+                            isSelected={currentRoomId === room.id}
+                            onClick={() => onRoomSelected(room.id)}
                         />
                     );
-                }}
-                components={{
-                    Footer: showFooter ? Footer : undefined,
                 }}
             />
         </div>
     );
 }
-
-const Footer = () => {
-    return (
-        <div
-            style={{
-                padding: "2rem",
-                display: "flex",
-                justifyContent: "center",
-            }}
-        >
-            <InlineSpinner />
-        </div>
-    );
-};

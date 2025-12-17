@@ -12,16 +12,15 @@ import "./RoomListItemView.css";
 
 import { Avatar } from "@vector-im/compound-web";
 import { NotificationDecoration } from "./NotificationDecoration";
-import type { RoomItemViewModel } from "./viewmodel/RoomListItemViewModel";
+import type { RoomSummary } from "./viewmodel/RoomSummary";
 import { Flex } from "./utils/Flex";
-import { useViewModel } from "@element-hq/web-shared-components";
 
 interface RoomListItemViewProps
     extends React.HTMLAttributes<HTMLButtonElement> {
     /**
      * The room to display
      */
-    room: RoomItemViewModel;
+    room: RoomSummary;
     /**
      * Whether the room is selected
      */
@@ -37,6 +36,7 @@ export const RoomListItemView = memo(function RoomListItemView({
     ...props
 }: RoomListItemViewProps): JSX.Element {
     const {
+        id,
         name,
         avatar,
         messagePreview,
@@ -44,7 +44,7 @@ export const RoomListItemView = memo(function RoomListItemView({
         notificationState,
         hasParticipantInCall,
         isBold,
-    } = useViewModel(room);
+    } = room;
 
     return (
         <button
@@ -62,12 +62,7 @@ export const RoomListItemView = memo(function RoomListItemView({
                 gap="var(--cpd-space-3x)"
                 align="center"
             >
-                <Avatar
-                    id={room.getSnapshot().roomId}
-                    name={name}
-                    src={avatar}
-                    size="26px"
-                />
+                <Avatar id={id} name={name} src={avatar} size="26px" />
                 <Flex
                     className="mx_RoomListItemView_content"
                     gap="var(--cpd-space-2x)"
@@ -86,16 +81,13 @@ export const RoomListItemView = memo(function RoomListItemView({
                             {messagePreview}
                         </div>
                     </div>
-                    <>
-                        {/* aria-hidden because we summarise the unread count/notification status in a11yLabel variable */}
-                        {showNotificationDecoration && (
-                            <NotificationDecoration
-                                notificationState={notificationState}
-                                aria-hidden={true}
-                                hasVideoCall={hasParticipantInCall}
-                            />
-                        )}
-                    </>
+                    {showNotificationDecoration && (
+                        <NotificationDecoration
+                            notificationState={notificationState}
+                            aria-hidden={true}
+                            hasVideoCall={hasParticipantInCall}
+                        />
+                    )}
                 </Flex>
             </Flex>
         </button>
