@@ -43,6 +43,9 @@ export class RoomListViewModel
     private roomList?: Awaited<
         ReturnType<typeof this.props.roomListService.allRooms>
     >;
+    private lowPriorityRoomIds: Set<string> = new Set();
+    private lowPriorityController?: RoomListDynamicEntriesControllerInterface;
+    private lowPriorityEntriesWithDynamicAdapters?: RoomListEntriesWithDynamicAdaptersResultInterface;
 
     public constructor(props: Props) {
         const initialFilter = RoomListEntriesDynamicFilterKind_Tags.NonLeft;
@@ -52,9 +55,11 @@ export class RoomListViewModel
             rooms: [],
             sections: [
                 { name: "Favourites", rooms: [], expanded: true },
-                { name: "Other", rooms: [], expanded: true },
+                { name: "Chats", rooms: [], expanded: true },
                 { name: "Low Priority", rooms: [], expanded: true },
             ],
+            visibleRooms: [],
+            groupCounts: [0, 0, 0],
             selectedFilter: initialFilter,
             filters: initialFilters,
             loading: true,
@@ -80,7 +85,9 @@ export class RoomListViewModel
         return Object.entries(FILTERS)
             .filter(
                 ([key]) =>
-                    key !== RoomListEntriesDynamicFilterKind_Tags.NonLeft,
+                    key !== RoomListEntriesDynamicFilterKind_Tags.NonLeft &&
+                    key !== RoomListEntriesDynamicFilterKind_Tags.Favourite &&
+                    key !== RoomListEntriesDynamicFilterKind_Tags.LowPriority,
             )
             .map(([key, value]) => ({
                 active: key === selectedFilter,
@@ -97,14 +104,13 @@ export class RoomListViewModel
         const other: RoomSummary[] = [];
         const lowPriority: RoomSummary[] = [];
 
-        // Categorize rooms based on isFavourite flag
-        // Note: We don't have isLowPriority in RoomInfo yet, so all non-favourites go to "Other"
-        // This can be extended in the future to check for low priority tags
+        // Categorize rooms based on isFavourite flag and low priority room IDs
         for (const room of rooms) {
             if (room.isFavourite) {
                 favourites.push(room);
+            } else if (this.lowPriorityRoomIds.has(room.id)) {
+                lowPriority.push(room);
             } else {
-                // TODO: Check for low priority tag when SDK exposes it
                 other.push(room);
             }
         }
@@ -116,7 +122,7 @@ export class RoomListViewModel
                 expanded: currentSections[0]?.expanded ?? true,
             },
             {
-                name: "Other",
+                name: "Chats",
                 rooms: other,
                 expanded: currentSections[1]?.expanded ?? true,
             },
@@ -126,6 +132,20 @@ export class RoomListViewModel
                 expanded: currentSections[2]?.expanded ?? true,
             },
         ];
+    }
+
+    private computeVisibleRoomsAndGroupCounts(sections: RoomSection[]): {
+        visibleRooms: RoomSummary[];
+        groupCounts: number[];
+    } {
+        const visibleRooms: RoomSummary[] = sections.flatMap((section) =>
+            section.expanded ? section.rooms : [],
+        );
+        const groupCounts = sections.map((section) =>
+            section.expanded ? section.rooms.length : 0,
+        );
+
+        return { visibleRooms, groupCounts };
     }
 
     private async applyDiff(
@@ -216,7 +236,14 @@ export class RoomListViewModel
             newRooms,
             currentSnapshot.sections,
         );
-        this.snapshot.merge({ rooms: newRooms, sections: newSections });
+        const { visibleRooms, groupCounts } =
+            this.computeVisibleRoomsAndGroupCounts(newSections);
+        this.snapshot.merge({
+            rooms: newRooms,
+            sections: newSections,
+            visibleRooms,
+            groupCounts,
+        });
     }
 
     private handleLoadingStateChange = (state: RoomListLoadingState): void => {
@@ -267,6 +294,7 @@ export class RoomListViewModel
             return;
         }
 
+        // Setup main room list
         this.roomListEntriesWithDynamicAdapters =
             this.roomList.entriesWithDynamicAdapters(50, this);
         this.controller = this.roomListEntriesWithDynamicAdapters.controller();
@@ -274,6 +302,82 @@ export class RoomListViewModel
         const selectedFilter = this.getSnapshot().selectedFilter;
         this.controller.setFilter(FILTERS[selectedFilter].method);
         this.controller.addOnePage();
+
+        // Setup low priority tracking
+        this.setupLowPriorityTracking();
+    };
+
+    private setupLowPriorityTracking = (): void => {
+        if (!this.roomList) {
+            return;
+        }
+
+        // Create a separate controller just for tracking low priority room IDs
+        this.lowPriorityEntriesWithDynamicAdapters =
+            this.roomList.entriesWithDynamicAdapters(1000, {
+                onUpdate: async (updates: RoomListEntriesUpdate[]) => {
+                    await this.updateLowPriorityRoomIds(updates);
+                },
+            });
+
+        this.lowPriorityController =
+            this.lowPriorityEntriesWithDynamicAdapters.controller();
+
+        // Set filter to only show low priority rooms
+        this.lowPriorityController.setFilter(
+            FILTERS[RoomListEntriesDynamicFilterKind_Tags.LowPriority].method,
+        );
+        this.lowPriorityController.addOnePage();
+    };
+
+    private updateLowPriorityRoomIds = async (
+        updates: RoomListEntriesUpdate[],
+    ): Promise<void> => {
+        for (const update of updates) {
+            switch (update.tag) {
+                case RoomListEntriesUpdate_Tags.Set:
+                case RoomListEntriesUpdate_Tags.PushBack:
+                case RoomListEntriesUpdate_Tags.PushFront:
+                case RoomListEntriesUpdate_Tags.Insert: {
+                    const room = update.inner.value;
+                    const roomInfo = await room.roomInfo();
+                    this.lowPriorityRoomIds.add(roomInfo.id);
+                    break;
+                }
+                case RoomListEntriesUpdate_Tags.Remove:
+                case RoomListEntriesUpdate_Tags.PopFront:
+                case RoomListEntriesUpdate_Tags.PopBack: {
+                    // We don't have the room info for removed items,
+                    // so we'll let the main list updates handle cleanup
+                    break;
+                }
+                case RoomListEntriesUpdate_Tags.Clear:
+                    this.lowPriorityRoomIds.clear();
+                    break;
+                case RoomListEntriesUpdate_Tags.Reset:
+                case RoomListEntriesUpdate_Tags.Append: {
+                    // For reset/append, update the full set
+                    const rooms = update.inner.values;
+                    const roomInfos = await Promise.all(
+                        rooms.map((r) => r.roomInfo()),
+                    );
+                    for (const info of roomInfos) {
+                        this.lowPriorityRoomIds.add(info.id);
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Recompute sections with updated low priority IDs
+        const currentSnapshot = this.getSnapshot();
+        const newSections = this.computeSections(
+            currentSnapshot.rooms,
+            currentSnapshot.sections,
+        );
+        const { visibleRooms, groupCounts } =
+            this.computeVisibleRoomsAndGroupCounts(newSections);
+        this.snapshot.merge({ sections: newSections, visibleRooms, groupCounts });
     };
 
     private subscribeToRooms = (): void => {
@@ -340,6 +444,12 @@ export class RoomListViewModel
         const newSections = currentSnapshot.sections.map((section, i) =>
             i === index ? { ...section, expanded: !section.expanded } : section,
         );
-        this.snapshot.merge({ sections: newSections });
+        const { visibleRooms, groupCounts } =
+            this.computeVisibleRoomsAndGroupCounts(newSections);
+        this.snapshot.merge({
+            sections: newSections,
+            visibleRooms,
+            groupCounts,
+        });
     };
 }
