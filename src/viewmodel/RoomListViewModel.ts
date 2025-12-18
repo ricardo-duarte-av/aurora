@@ -43,6 +43,7 @@ export class RoomListViewModel
     private roomList?: Awaited<
         ReturnType<typeof this.props.roomListService.allRooms>
     >;
+    private lowPriorityRooms: string[] = [];
     private lowPriorityRoomIds: Set<string> = new Set();
     private lowPriorityController?: RoomListDynamicEntriesControllerInterface;
     private lowPriorityEntriesWithDynamicAdapters?: RoomListEntriesWithDynamicAdaptersResultInterface;
@@ -343,14 +344,15 @@ export class RoomListViewModel
     private updateLowPriorityRoomIds = async (
         updates: RoomListEntriesUpdate[],
     ): Promise<void> => {
-        // Convert the Set to an array, apply diff, then convert back
-        const currentIds = Array.from(this.lowPriorityRoomIds);
-        const newIds = await this.applyDiff(
-            currentIds,
+        // Apply diff to maintain the array properly
+        this.lowPriorityRooms = await this.applyDiff(
+            this.lowPriorityRooms,
             updates,
             this.parseRoomId.bind(this),
         );
-        this.lowPriorityRoomIds = new Set(newIds);
+
+        // Update the Set for fast lookups
+        this.lowPriorityRoomIds = new Set(this.lowPriorityRooms);
 
         // Recompute sections with updated low priority IDs
         const currentSnapshot = this.getSnapshot();
