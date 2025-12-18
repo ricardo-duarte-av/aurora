@@ -79,6 +79,9 @@ export interface RoomSummary {
 
     /** Whether room is a direct message */
     isDirect: boolean;
+
+    /** Whether room is marked as favourite */
+    isFavourite: boolean;
 }
 
 /**
@@ -129,5 +132,6 @@ export function buildRoomSummary(
         unreadNotificationsCount: Number(roomInfo.numUnreadNotifications),
         membership: roomInfo.membership,
         isDirect: roomInfo.isDirect,
+        isFavourite: roomInfo.isFavourite,
     };
 }
