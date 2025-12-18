@@ -59,8 +59,9 @@ export class RoomListViewModel
                 { name: "Chats", rooms: [], expanded: true },
                 { name: "Low Priority", rooms: [], expanded: true },
             ],
+            visibleSections: [],
             visibleRooms: [],
-            groupCounts: [0, 0, 0],
+            groupCounts: [],
             selectedFilter: initialFilter,
             filters: initialFilters,
             loading: true,
@@ -136,17 +137,31 @@ export class RoomListViewModel
     }
 
     private computeVisibleRoomsAndGroupCounts(sections: RoomSection[]): {
+        visibleSections: Array<{ section: RoomSection; originalIndex: number }>;
         visibleRooms: RoomSummary[];
         groupCounts: number[];
     } {
-        const visibleRooms: RoomSummary[] = sections.flatMap((section) =>
-            section.expanded ? section.rooms : [],
-        );
-        const groupCounts = sections.map((section) =>
-            section.expanded ? section.rooms.length : 0,
-        );
+        const visibleSections: Array<{ section: RoomSection; originalIndex: number }> = [];
+        const visibleRooms: RoomSummary[] = [];
+        const groupCounts: number[] = [];
 
-        return { visibleRooms, groupCounts };
+        sections.forEach((section, originalIndex) => {
+            // Skip sections with no rooms entirely
+            if (section.rooms.length === 0) {
+                return;
+            }
+
+            visibleSections.push({ section, originalIndex });
+
+            if (section.expanded) {
+                visibleRooms.push(...section.rooms);
+                groupCounts.push(section.rooms.length);
+            } else {
+                groupCounts.push(0);
+            }
+        });
+
+        return { visibleSections, visibleRooms, groupCounts };
     }
 
     private async applyDiff<T>(
@@ -242,11 +257,12 @@ export class RoomListViewModel
             newRooms,
             currentSnapshot.sections,
         );
-        const { visibleRooms, groupCounts } =
+        const { visibleSections, visibleRooms, groupCounts } =
             this.computeVisibleRoomsAndGroupCounts(newSections);
         this.snapshot.merge({
             rooms: newRooms,
             sections: newSections,
+            visibleSections,
             visibleRooms,
             groupCounts,
         });
@@ -360,10 +376,11 @@ export class RoomListViewModel
             currentSnapshot.rooms,
             currentSnapshot.sections,
         );
-        const { visibleRooms, groupCounts } =
+        const { visibleSections, visibleRooms, groupCounts } =
             this.computeVisibleRoomsAndGroupCounts(newSections);
         this.snapshot.merge({
             sections: newSections,
+            visibleSections,
             visibleRooms,
             groupCounts,
         });
@@ -433,10 +450,11 @@ export class RoomListViewModel
         const newSections = currentSnapshot.sections.map((section, i) =>
             i === index ? { ...section, expanded: !section.expanded } : section,
         );
-        const { visibleRooms, groupCounts } =
+        const { visibleSections, visibleRooms, groupCounts } =
             this.computeVisibleRoomsAndGroupCounts(newSections);
         this.snapshot.merge({
             sections: newSections,
+            visibleSections,
             visibleRooms,
             groupCounts,
         });
