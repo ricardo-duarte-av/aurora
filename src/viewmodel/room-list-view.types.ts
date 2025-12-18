@@ -29,12 +29,27 @@ export interface FilterInfo {
     key: SupportedFilters;
 }
 
+export interface RoomSection {
+    name: string;
+    rooms: Array<RoomSummary>;
+    expanded: boolean;
+}
+
 /**
  * Snapshot represents the complete state of the room list view
  */
 export interface RoomListViewSnapshot {
     /** List of room summaries */
     rooms: Array<RoomSummary>;
+
+    /** Room sections (Favourites, Other, Low Priority) */
+    sections: Array<RoomSection>;
+
+    /** Flat list of visible rooms (computed from sections) */
+    visibleRooms: Array<RoomSummary>;
+
+    /** Group counts for virtuoso (computed from sections) */
+    groupCounts: Array<number>;
 
     /** Currently selected filter */
     selectedFilter: SupportedFilters;
@@ -77,4 +92,9 @@ export interface RoomListViewActions {
      * Check if the 'All' filter is active
      */
     isAllFilter(): boolean;
+
+    /**
+     * Toggle a section's expanded state
+     */
+    toggleSection(index: number): void;
 }
