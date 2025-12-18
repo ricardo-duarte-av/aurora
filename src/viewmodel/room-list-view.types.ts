@@ -45,6 +45,9 @@ export interface RoomListViewSnapshot {
     /** Room sections (Favourites, Other, Low Priority) */
     sections: Array<RoomSection>;
 
+    /** Non-empty sections with original indices for rendering */
+    visibleSections: Array<{ section: RoomSection; originalIndex: number }>;
+
     /** Flat list of visible rooms (computed from sections) */
     visibleRooms: Array<RoomSummary>;
 

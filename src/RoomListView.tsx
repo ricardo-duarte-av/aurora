@@ -25,7 +25,7 @@ export function RoomListView({
     vm,
     onRoomSelected,
 }: RoomListViewProps): JSX.Element {
-    const { rooms, sections, visibleRooms, groupCounts, currentRoomId, loading } =
+    const { rooms, visibleSections, visibleRooms, groupCounts, currentRoomId, loading } =
         useViewModel(vm);
 
     // Show centered spinner while waiting for room list to load
@@ -67,26 +67,29 @@ export function RoomListView({
                         />
                     ),
                 }}
-                groupContent={(index) => (
-                    <button
-                        type="button"
-                        className="mx_RoomListView_sectionHeader"
-                        onClick={() => vm.toggleSection(index)}
-                    >
-                        <span
-                            style={{
-                                transform: sections[index].expanded
-                                    ? "rotate(90deg)"
-                                    : "rotate(0deg)",
-                                transition: "transform 0.2s ease",
-                                display: "inline-block",
-                            }}
+                groupContent={(index) => {
+                    const { section, originalIndex } = visibleSections[index];
+                    return (
+                        <button
+                            type="button"
+                            className="mx_RoomListView_sectionHeader"
+                            onClick={() => vm.toggleSection(originalIndex)}
                         >
-                            ❯
-                        </span>
-                        <span>{sections[index].name}</span>
-                    </button>
-                )}
+                            <span
+                                style={{
+                                    transform: section.expanded
+                                        ? "rotate(90deg)"
+                                        : "rotate(0deg)",
+                                    transition: "transform 0.2s ease",
+                                    display: "inline-block",
+                                }}
+                            >
+                                ❯
+                            </span>
+                            <span>{section.name}</span>
+                        </button>
+                    );
+                }}
                 itemContent={(index) => {
                     const room = visibleRooms[index];
                     return (
