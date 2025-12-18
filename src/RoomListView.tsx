@@ -65,24 +65,7 @@ export function RoomListView({
                 groupContent={(index) => (
                     <button
                         type="button"
-                        style={{
-                            backgroundColor: "var(--cpd-color-bg-canvas-default)",
-                            color: "var(--cpd-color-text-primary)",
-                            paddingTop: "1rem",
-                            paddingRight: "1rem",
-                            paddingLeft: "1rem",
-                            paddingBottom: "0.5rem",
-                            cursor: "pointer",
-                            userSelect: "none",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            fontWeight: 600,
-                            fontSize: "0.875rem",
-                            border: "none",
-                            width: "100%",
-                            textAlign: "left",
-                        }}
+                        className="mx_RoomListView_sectionHeader"
                         onClick={() => vm.toggleSection(index)}
                     >
                         <span

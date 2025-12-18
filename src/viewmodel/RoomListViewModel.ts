@@ -148,16 +148,17 @@ export class RoomListViewModel
         return { visibleRooms, groupCounts };
     }
 
-    private async applyDiff(
-        items: RoomSummary[],
+    private async applyDiff<T>(
+        items: T[],
         updates: RoomListEntriesUpdate[],
-    ): Promise<RoomSummary[]> {
+        parseValue: (room: RoomInterface) => Promise<T>,
+    ): Promise<T[]> {
         let newItems = [...items];
 
         for (const update of updates) {
             switch (update.tag) {
                 case RoomListEntriesUpdate_Tags.Set:
-                    newItems[update.inner.index] = await this.parseRoom(
+                    newItems[update.inner.index] = await parseValue(
                         update.inner.value,
                     );
                     newItems = [...newItems];
@@ -165,12 +166,12 @@ export class RoomListViewModel
                 case RoomListEntriesUpdate_Tags.PushBack:
                     newItems = [
                         ...newItems,
-                        await this.parseRoom(update.inner.value),
+                        await parseValue(update.inner.value),
                     ];
                     break;
                 case RoomListEntriesUpdate_Tags.PushFront:
                     newItems = [
-                        await this.parseRoom(update.inner.value),
+                        await parseValue(update.inner.value),
                         ...newItems,
                     ];
                     break;
@@ -189,7 +190,7 @@ export class RoomListViewModel
                     newItems.splice(
                         update.inner.index,
                         0,
-                        await this.parseRoom(update.inner.value),
+                        await parseValue(update.inner.value),
                     );
                     newItems = [...newItems];
                     break;
@@ -202,14 +203,14 @@ export class RoomListViewModel
                     break;
                 case RoomListEntriesUpdate_Tags.Reset:
                     newItems = await Promise.all(
-                        update.inner.values.map((v) => this.parseRoom(v)),
+                        update.inner.values.map((v) => parseValue(v)),
                     );
                     break;
                 case RoomListEntriesUpdate_Tags.Append:
                     newItems = [
                         ...newItems,
                         ...(await Promise.all(
-                            update.inner.values.map((v) => this.parseRoom(v)),
+                            update.inner.values.map((v) => parseValue(v)),
                         )),
                     ];
                     break;
@@ -231,7 +232,11 @@ export class RoomListViewModel
         updates: RoomListEntriesUpdate[],
     ): Promise<void> {
         const currentSnapshot = this.getSnapshot();
-        const newRooms = await this.applyDiff(currentSnapshot.rooms, updates);
+        const newRooms = await this.applyDiff(
+            currentSnapshot.rooms,
+            updates,
+            this.parseRoom.bind(this),
+        );
         const newSections = this.computeSections(
             newRooms,
             currentSnapshot.sections,
@@ -296,7 +301,7 @@ export class RoomListViewModel
 
         // Setup main room list
         this.roomListEntriesWithDynamicAdapters =
-            this.roomList.entriesWithDynamicAdapters(50, this);
+            this.roomList.entriesWithDynamicAdapters(200, this);
         this.controller = this.roomListEntriesWithDynamicAdapters.controller();
 
         const selectedFilter = this.getSnapshot().selectedFilter;
@@ -330,44 +335,22 @@ export class RoomListViewModel
         this.lowPriorityController.addOnePage();
     };
 
+    private async parseRoomId(room: RoomInterface): Promise<string> {
+        const roomInfo = await room.roomInfo();
+        return roomInfo.id;
+    }
+
     private updateLowPriorityRoomIds = async (
         updates: RoomListEntriesUpdate[],
     ): Promise<void> => {
-        for (const update of updates) {
-            switch (update.tag) {
-                case RoomListEntriesUpdate_Tags.Set:
-                case RoomListEntriesUpdate_Tags.PushBack:
-                case RoomListEntriesUpdate_Tags.PushFront:
-                case RoomListEntriesUpdate_Tags.Insert: {
-                    const room = update.inner.value;
-                    const roomInfo = await room.roomInfo();
-                    this.lowPriorityRoomIds.add(roomInfo.id);
-                    break;
-                }
-                case RoomListEntriesUpdate_Tags.Remove:
-                case RoomListEntriesUpdate_Tags.PopFront:
-                case RoomListEntriesUpdate_Tags.PopBack: {
-                    // We don't have the room info for removed items,
-                    // so we'll let the main list updates handle cleanup
-                    break;
-                }
-                case RoomListEntriesUpdate_Tags.Clear:
-                    this.lowPriorityRoomIds.clear();
-                    break;
-                case RoomListEntriesUpdate_Tags.Reset:
-                case RoomListEntriesUpdate_Tags.Append: {
-                    // For reset/append, update the full set
-                    const rooms = update.inner.values;
-                    const roomInfos = await Promise.all(
-                        rooms.map((r) => r.roomInfo()),
-                    );
-                    for (const info of roomInfos) {
-                        this.lowPriorityRoomIds.add(info.id);
-                    }
-                    break;
-                }
-            }
-        }
+        // Convert the Set to an array, apply diff, then convert back
+        const currentIds = Array.from(this.lowPriorityRoomIds);
+        const newIds = await this.applyDiff(
+            currentIds,
+            updates,
+            this.parseRoomId.bind(this),
+        );
+        this.lowPriorityRoomIds = new Set(newIds);
 
         // Recompute sections with updated low priority IDs
         const currentSnapshot = this.getSnapshot();
@@ -377,7 +360,11 @@ export class RoomListViewModel
         );
         const { visibleRooms, groupCounts } =
             this.computeVisibleRoomsAndGroupCounts(newSections);
-        this.snapshot.merge({ sections: newSections, visibleRooms, groupCounts });
+        this.snapshot.merge({
+            sections: newSections,
+            visibleRooms,
+            groupCounts,
+        });
     };
 
     private subscribeToRooms = (): void => {
