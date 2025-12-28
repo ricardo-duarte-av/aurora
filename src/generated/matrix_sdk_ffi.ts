@@ -3944,144 +3944,6 @@ const FfiConverterTypeFormattedBody = (() => {
 })();
 
 
-export type GalleryMessageContent = {
-    body: string,
-    formatted: FormattedBody | undefined,
-    itemtypes: Array<GalleryItemType>
-}
-
-/**
- * Generated factory for {@link GalleryMessageContent} record objects.
- */
-export const GalleryMessageContent = (() => {
-    const defaults = () => ({
-    });
-    const create = (() => {
-        return uniffiCreateRecord<GalleryMessageContent, ReturnType<typeof defaults>>(defaults);
-    })();
-    return Object.freeze({
-        /**
-         * Create a frozen instance of {@link GalleryMessageContent}, with defaults specified
-         * in Rust, in the {@link matrix_sdk_ffi} crate.
-         */
-        create,
-
-        /**
-         * Create a frozen instance of {@link GalleryMessageContent}, with defaults specified
-         * in Rust, in the {@link matrix_sdk_ffi} crate.
-         */
-        new: create,
-
-        /**
-         * Defaults specified in the {@link matrix_sdk_ffi} crate.
-         */
-        defaults: () => Object.freeze(defaults()) as Partial<GalleryMessageContent>,
-    });
-})();
-
-const FfiConverterTypeGalleryMessageContent = (() => {
-    type TypeName = GalleryMessageContent;
-    class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
-        read(from: RustBuffer): TypeName {
-            return {
-                body: FfiConverterString.read(from), 
-                formatted: FfiConverterOptionalTypeFormattedBody.read(from), 
-                itemtypes: FfiConverterArrayTypeGalleryItemType.read(from)
-            };
-        }
-        write(value: TypeName, into: RustBuffer): void {
-            FfiConverterString.write(value.body, into);
-            FfiConverterOptionalTypeFormattedBody.write(value.formatted, into);
-            FfiConverterArrayTypeGalleryItemType.write(value.itemtypes, into);
-        }
-        allocationSize(value: TypeName): number {
-            return FfiConverterString.allocationSize(value.body) + 
-            FfiConverterOptionalTypeFormattedBody.allocationSize(value.formatted) + 
-            FfiConverterArrayTypeGalleryItemType.allocationSize(value.itemtypes);
-            
-        }
-    };
-    return new FFIConverter();
-})();
-
-
-export type GalleryUploadParameters = {
-    /**
-     * Optional non-formatted caption, for clients that support it.
-     */
-    caption: string | undefined,
-    /**
-     * Optional HTML-formatted caption, for clients that support it.
-     */
-    formattedCaption: FormattedBody | undefined,
-    /**
-     * Optional intentional mentions to be sent with the gallery.
-     */
-    mentions: Mentions | undefined,
-    /**
-     * Optional Event ID to reply to.
-     */
-    inReplyTo: string | undefined
-}
-
-/**
- * Generated factory for {@link GalleryUploadParameters} record objects.
- */
-export const GalleryUploadParameters = (() => {
-    const defaults = () => ({
-    });
-    const create = (() => {
-        return uniffiCreateRecord<GalleryUploadParameters, ReturnType<typeof defaults>>(defaults);
-    })();
-    return Object.freeze({
-        /**
-         * Create a frozen instance of {@link GalleryUploadParameters}, with defaults specified
-         * in Rust, in the {@link matrix_sdk_ffi} crate.
-         */
-        create,
-
-        /**
-         * Create a frozen instance of {@link GalleryUploadParameters}, with defaults specified
-         * in Rust, in the {@link matrix_sdk_ffi} crate.
-         */
-        new: create,
-
-        /**
-         * Defaults specified in the {@link matrix_sdk_ffi} crate.
-         */
-        defaults: () => Object.freeze(defaults()) as Partial<GalleryUploadParameters>,
-    });
-})();
-
-const FfiConverterTypeGalleryUploadParameters = (() => {
-    type TypeName = GalleryUploadParameters;
-    class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
-        read(from: RustBuffer): TypeName {
-            return {
-                caption: FfiConverterOptionalString.read(from), 
-                formattedCaption: FfiConverterOptionalTypeFormattedBody.read(from), 
-                mentions: FfiConverterOptionalTypeMentions.read(from), 
-                inReplyTo: FfiConverterOptionalString.read(from)
-            };
-        }
-        write(value: TypeName, into: RustBuffer): void {
-            FfiConverterOptionalString.write(value.caption, into);
-            FfiConverterOptionalTypeFormattedBody.write(value.formattedCaption, into);
-            FfiConverterOptionalTypeMentions.write(value.mentions, into);
-            FfiConverterOptionalString.write(value.inReplyTo, into);
-        }
-        allocationSize(value: TypeName): number {
-            return FfiConverterOptionalString.allocationSize(value.caption) + 
-            FfiConverterOptionalTypeFormattedBody.allocationSize(value.formattedCaption) + 
-            FfiConverterOptionalTypeMentions.allocationSize(value.mentions) + 
-            FfiConverterOptionalString.allocationSize(value.inReplyTo);
-            
-        }
-    };
-    return new FFIConverter();
-})();
-
-
 export type HttpPusherData = {
     url: string,
     format: PushFormat | undefined,
@@ -6433,72 +6295,6 @@ const FfiConverterTypeReceipt = (() => {
         }
         allocationSize(value: TypeName): number {
             return FfiConverterOptionalTypeTimestamp.allocationSize(value.timestamp);
-            
-        }
-    };
-    return new FFIConverter();
-})();
-
-
-/**
- * Represents an emoji recently used for reactions.
- */
-export type RecentEmoji = {
-    /**
-     * The actual emoji text representation.
-     */
-    emoji: string,
-    /**
-     * The number of times this emoji has been used for reactions.
-     */
-    count: /*u64*/bigint
-}
-
-/**
- * Generated factory for {@link RecentEmoji} record objects.
- */
-export const RecentEmoji = (() => {
-    const defaults = () => ({
-    });
-    const create = (() => {
-        return uniffiCreateRecord<RecentEmoji, ReturnType<typeof defaults>>(defaults);
-    })();
-    return Object.freeze({
-        /**
-         * Create a frozen instance of {@link RecentEmoji}, with defaults specified
-         * in Rust, in the {@link matrix_sdk_ffi} crate.
-         */
-        create,
-
-        /**
-         * Create a frozen instance of {@link RecentEmoji}, with defaults specified
-         * in Rust, in the {@link matrix_sdk_ffi} crate.
-         */
-        new: create,
-
-        /**
-         * Defaults specified in the {@link matrix_sdk_ffi} crate.
-         */
-        defaults: () => Object.freeze(defaults()) as Partial<RecentEmoji>,
-    });
-})();
-
-const FfiConverterTypeRecentEmoji = (() => {
-    type TypeName = RecentEmoji;
-    class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
-        read(from: RustBuffer): TypeName {
-            return {
-                emoji: FfiConverterString.read(from), 
-                count: FfiConverterUInt64.read(from)
-            };
-        }
-        write(value: TypeName, into: RustBuffer): void {
-            FfiConverterString.write(value.emoji, into);
-            FfiConverterUInt64.write(value.count, into);
-        }
-        allocationSize(value: TypeName): number {
-            return FfiConverterString.allocationSize(value.emoji) + 
-            FfiConverterUInt64.allocationSize(value.count);
             
         }
     };
@@ -16918,557 +16714,6 @@ const FfiConverterTypeFocusEventError = (() => {
 })();
 
 
-// Enum: GalleryItemInfo
-export enum GalleryItemInfo_Tags {
-    Audio = "Audio",
-    File = "File",
-    Image = "Image",
-    Video = "Video"
-}
-export const GalleryItemInfo = (() => {
-    
-
-    type Audio__interface = {
-        tag: GalleryItemInfo_Tags.Audio;
-        inner: Readonly<{audioInfo: AudioInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined}>
-    };
-
-    
-    class Audio_ extends UniffiEnum implements Audio__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemInfo";
-        readonly tag = GalleryItemInfo_Tags.Audio;
-        readonly inner: Readonly<{audioInfo: AudioInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined}>;
-        constructor(inner: { audioInfo: AudioInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined }) {
-            super("GalleryItemInfo", "Audio");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { audioInfo: AudioInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined }): Audio_ {
-            return new Audio_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Audio_ {
-            return obj.tag === GalleryItemInfo_Tags.Audio;
-        }
-
-        
-
-    }
-    
-
-    type File__interface = {
-        tag: GalleryItemInfo_Tags.File;
-        inner: Readonly<{fileInfo: FileInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined}>
-    };
-
-    
-    class File_ extends UniffiEnum implements File__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemInfo";
-        readonly tag = GalleryItemInfo_Tags.File;
-        readonly inner: Readonly<{fileInfo: FileInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined}>;
-        constructor(inner: { fileInfo: FileInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined }) {
-            super("GalleryItemInfo", "File");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { fileInfo: FileInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined }): File_ {
-            return new File_(inner);
-        }
-
-        static instanceOf(obj: any): obj is File_ {
-            return obj.tag === GalleryItemInfo_Tags.File;
-        }
-
-        
-
-    }
-    
-
-    type Image__interface = {
-        tag: GalleryItemInfo_Tags.Image;
-        inner: Readonly<{imageInfo: ImageInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined; thumbnailSource: UploadSource | undefined}>
-    };
-
-    
-    class Image_ extends UniffiEnum implements Image__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemInfo";
-        readonly tag = GalleryItemInfo_Tags.Image;
-        readonly inner: Readonly<{imageInfo: ImageInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined; thumbnailSource: UploadSource | undefined}>;
-        constructor(inner: { imageInfo: ImageInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined, thumbnailSource: UploadSource | undefined }) {
-            super("GalleryItemInfo", "Image");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { imageInfo: ImageInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined, thumbnailSource: UploadSource | undefined }): Image_ {
-            return new Image_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Image_ {
-            return obj.tag === GalleryItemInfo_Tags.Image;
-        }
-
-        
-
-    }
-    
-
-    type Video__interface = {
-        tag: GalleryItemInfo_Tags.Video;
-        inner: Readonly<{videoInfo: VideoInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined; thumbnailSource: UploadSource | undefined}>
-    };
-
-    
-    class Video_ extends UniffiEnum implements Video__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemInfo";
-        readonly tag = GalleryItemInfo_Tags.Video;
-        readonly inner: Readonly<{videoInfo: VideoInfo; source: UploadSource; caption: string | undefined; formattedCaption: FormattedBody | undefined; thumbnailSource: UploadSource | undefined}>;
-        constructor(inner: { videoInfo: VideoInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined, thumbnailSource: UploadSource | undefined }) {
-            super("GalleryItemInfo", "Video");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { videoInfo: VideoInfo, source: UploadSource, caption: string | undefined, formattedCaption: FormattedBody | undefined, thumbnailSource: UploadSource | undefined }): Video_ {
-            return new Video_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Video_ {
-            return obj.tag === GalleryItemInfo_Tags.Video;
-        }
-
-        
-
-    }
-
-    function instanceOf(obj: any): obj is GalleryItemInfo {
-        return obj[uniffiTypeNameSymbol] === "GalleryItemInfo";
-    }
-
-    return Object.freeze({
-        instanceOf,
-  Audio: Audio_, 
-  File: File_, 
-  Image: Image_, 
-  Video: Video_
-    });
-
-})();
-
-
-
-export type GalleryItemInfo = InstanceType<
-    typeof GalleryItemInfo[keyof Omit<typeof GalleryItemInfo, 'instanceOf'>]
->;
-
-// FfiConverter for enum GalleryItemInfo
-const FfiConverterTypeGalleryItemInfo = (() => {
-    const ordinalConverter = FfiConverterInt32;
-    type TypeName = GalleryItemInfo;
-    class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
-        read(from: RustBuffer): TypeName {
-            switch (ordinalConverter.read(from)) {
-                case 1: return new GalleryItemInfo.Audio({audioInfo: FfiConverterTypeAudioInfo.read(from), source: FfiConverterTypeUploadSource.read(from), caption: FfiConverterOptionalString.read(from), formattedCaption: FfiConverterOptionalTypeFormattedBody.read(from) });
-                case 2: return new GalleryItemInfo.File({fileInfo: FfiConverterTypeFileInfo.read(from), source: FfiConverterTypeUploadSource.read(from), caption: FfiConverterOptionalString.read(from), formattedCaption: FfiConverterOptionalTypeFormattedBody.read(from) });
-                case 3: return new GalleryItemInfo.Image({imageInfo: FfiConverterTypeImageInfo.read(from), source: FfiConverterTypeUploadSource.read(from), caption: FfiConverterOptionalString.read(from), formattedCaption: FfiConverterOptionalTypeFormattedBody.read(from), thumbnailSource: FfiConverterOptionalTypeUploadSource.read(from) });
-                case 4: return new GalleryItemInfo.Video({videoInfo: FfiConverterTypeVideoInfo.read(from), source: FfiConverterTypeUploadSource.read(from), caption: FfiConverterOptionalString.read(from), formattedCaption: FfiConverterOptionalTypeFormattedBody.read(from), thumbnailSource: FfiConverterOptionalTypeUploadSource.read(from) });
-                default: throw new UniffiInternalError.UnexpectedEnumCase();
-            }
-        }
-        write(value: TypeName, into: RustBuffer): void {
-            switch (value.tag) {
-                case GalleryItemInfo_Tags.Audio: {
-                    ordinalConverter.write(1, into);
-                    const inner = value.inner;
-                    FfiConverterTypeAudioInfo.write(inner.audioInfo, into);
-                    FfiConverterTypeUploadSource.write(inner.source, into);
-                    FfiConverterOptionalString.write(inner.caption, into);
-                    FfiConverterOptionalTypeFormattedBody.write(inner.formattedCaption, into);
-                    return;
-                }
-                case GalleryItemInfo_Tags.File: {
-                    ordinalConverter.write(2, into);
-                    const inner = value.inner;
-                    FfiConverterTypeFileInfo.write(inner.fileInfo, into);
-                    FfiConverterTypeUploadSource.write(inner.source, into);
-                    FfiConverterOptionalString.write(inner.caption, into);
-                    FfiConverterOptionalTypeFormattedBody.write(inner.formattedCaption, into);
-                    return;
-                }
-                case GalleryItemInfo_Tags.Image: {
-                    ordinalConverter.write(3, into);
-                    const inner = value.inner;
-                    FfiConverterTypeImageInfo.write(inner.imageInfo, into);
-                    FfiConverterTypeUploadSource.write(inner.source, into);
-                    FfiConverterOptionalString.write(inner.caption, into);
-                    FfiConverterOptionalTypeFormattedBody.write(inner.formattedCaption, into);
-                    FfiConverterOptionalTypeUploadSource.write(inner.thumbnailSource, into);
-                    return;
-                }
-                case GalleryItemInfo_Tags.Video: {
-                    ordinalConverter.write(4, into);
-                    const inner = value.inner;
-                    FfiConverterTypeVideoInfo.write(inner.videoInfo, into);
-                    FfiConverterTypeUploadSource.write(inner.source, into);
-                    FfiConverterOptionalString.write(inner.caption, into);
-                    FfiConverterOptionalTypeFormattedBody.write(inner.formattedCaption, into);
-                    FfiConverterOptionalTypeUploadSource.write(inner.thumbnailSource, into);
-                    return;
-                }
-                default:
-                    // Throwing from here means that GalleryItemInfo_Tags hasn't matched an ordinal.
-                    throw new UniffiInternalError.UnexpectedEnumCase();
-            }
-        }
-        allocationSize(value: TypeName): number {
-            switch (value.tag) {
-                case GalleryItemInfo_Tags.Audio: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(1);
-                    size += FfiConverterTypeAudioInfo.allocationSize(inner.audioInfo);
-                    size += FfiConverterTypeUploadSource.allocationSize(inner.source);
-                    size += FfiConverterOptionalString.allocationSize(inner.caption);
-                    size += FfiConverterOptionalTypeFormattedBody.allocationSize(inner.formattedCaption);
-                    return size;
-                }
-                case GalleryItemInfo_Tags.File: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(2);
-                    size += FfiConverterTypeFileInfo.allocationSize(inner.fileInfo);
-                    size += FfiConverterTypeUploadSource.allocationSize(inner.source);
-                    size += FfiConverterOptionalString.allocationSize(inner.caption);
-                    size += FfiConverterOptionalTypeFormattedBody.allocationSize(inner.formattedCaption);
-                    return size;
-                }
-                case GalleryItemInfo_Tags.Image: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(3);
-                    size += FfiConverterTypeImageInfo.allocationSize(inner.imageInfo);
-                    size += FfiConverterTypeUploadSource.allocationSize(inner.source);
-                    size += FfiConverterOptionalString.allocationSize(inner.caption);
-                    size += FfiConverterOptionalTypeFormattedBody.allocationSize(inner.formattedCaption);
-                    size += FfiConverterOptionalTypeUploadSource.allocationSize(inner.thumbnailSource);
-                    return size;
-                }
-                case GalleryItemInfo_Tags.Video: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(4);
-                    size += FfiConverterTypeVideoInfo.allocationSize(inner.videoInfo);
-                    size += FfiConverterTypeUploadSource.allocationSize(inner.source);
-                    size += FfiConverterOptionalString.allocationSize(inner.caption);
-                    size += FfiConverterOptionalTypeFormattedBody.allocationSize(inner.formattedCaption);
-                    size += FfiConverterOptionalTypeUploadSource.allocationSize(inner.thumbnailSource);
-                    return size;
-                }
-                default: throw new UniffiInternalError.UnexpectedEnumCase();
-            }
-        }
-    }
-    return new FFIConverter();
-})();
-
-
-
-// Enum: GalleryItemType
-export enum GalleryItemType_Tags {
-    Image = "Image",
-    Audio = "Audio",
-    Video = "Video",
-    File = "File",
-    Other = "Other"
-}
-export const GalleryItemType = (() => {
-    
-
-    type Image__interface = {
-        tag: GalleryItemType_Tags.Image;
-        inner: Readonly<{content: ImageMessageContent}>
-    };
-
-    
-    class Image_ extends UniffiEnum implements Image__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemType";
-        readonly tag = GalleryItemType_Tags.Image;
-        readonly inner: Readonly<{content: ImageMessageContent}>;
-        constructor(inner: { content: ImageMessageContent }) {
-            super("GalleryItemType", "Image");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { content: ImageMessageContent }): Image_ {
-            return new Image_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Image_ {
-            return obj.tag === GalleryItemType_Tags.Image;
-        }
-
-        
-
-    }
-    
-
-    type Audio__interface = {
-        tag: GalleryItemType_Tags.Audio;
-        inner: Readonly<{content: AudioMessageContent}>
-    };
-
-    
-    class Audio_ extends UniffiEnum implements Audio__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemType";
-        readonly tag = GalleryItemType_Tags.Audio;
-        readonly inner: Readonly<{content: AudioMessageContent}>;
-        constructor(inner: { content: AudioMessageContent }) {
-            super("GalleryItemType", "Audio");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { content: AudioMessageContent }): Audio_ {
-            return new Audio_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Audio_ {
-            return obj.tag === GalleryItemType_Tags.Audio;
-        }
-
-        
-
-    }
-    
-
-    type Video__interface = {
-        tag: GalleryItemType_Tags.Video;
-        inner: Readonly<{content: VideoMessageContent}>
-    };
-
-    
-    class Video_ extends UniffiEnum implements Video__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemType";
-        readonly tag = GalleryItemType_Tags.Video;
-        readonly inner: Readonly<{content: VideoMessageContent}>;
-        constructor(inner: { content: VideoMessageContent }) {
-            super("GalleryItemType", "Video");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { content: VideoMessageContent }): Video_ {
-            return new Video_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Video_ {
-            return obj.tag === GalleryItemType_Tags.Video;
-        }
-
-        
-
-    }
-    
-
-    type File__interface = {
-        tag: GalleryItemType_Tags.File;
-        inner: Readonly<{content: FileMessageContent}>
-    };
-
-    
-    class File_ extends UniffiEnum implements File__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemType";
-        readonly tag = GalleryItemType_Tags.File;
-        readonly inner: Readonly<{content: FileMessageContent}>;
-        constructor(inner: { content: FileMessageContent }) {
-            super("GalleryItemType", "File");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { content: FileMessageContent }): File_ {
-            return new File_(inner);
-        }
-
-        static instanceOf(obj: any): obj is File_ {
-            return obj.tag === GalleryItemType_Tags.File;
-        }
-
-        
-
-    }
-    
-
-    type Other__interface = {
-        tag: GalleryItemType_Tags.Other;
-        inner: Readonly<{itemtype: string; body: string}>
-    };
-
-    
-    class Other_ extends UniffiEnum implements Other__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "GalleryItemType";
-        readonly tag = GalleryItemType_Tags.Other;
-        readonly inner: Readonly<{itemtype: string; body: string}>;
-        constructor(inner: { itemtype: string, body: string }) {
-            super("GalleryItemType", "Other");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { itemtype: string, body: string }): Other_ {
-            return new Other_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Other_ {
-            return obj.tag === GalleryItemType_Tags.Other;
-        }
-
-        
-
-    }
-
-    function instanceOf(obj: any): obj is GalleryItemType {
-        return obj[uniffiTypeNameSymbol] === "GalleryItemType";
-    }
-
-    return Object.freeze({
-        instanceOf,
-  Image: Image_, 
-  Audio: Audio_, 
-  Video: Video_, 
-  File: File_, 
-  Other: Other_
-    });
-
-})();
-
-
-
-export type GalleryItemType = InstanceType<
-    typeof GalleryItemType[keyof Omit<typeof GalleryItemType, 'instanceOf'>]
->;
-
-// FfiConverter for enum GalleryItemType
-const FfiConverterTypeGalleryItemType = (() => {
-    const ordinalConverter = FfiConverterInt32;
-    type TypeName = GalleryItemType;
-    class FFIConverter extends AbstractFfiConverterByteArray<TypeName> {
-        read(from: RustBuffer): TypeName {
-            switch (ordinalConverter.read(from)) {
-                case 1: return new GalleryItemType.Image({content: FfiConverterTypeImageMessageContent.read(from) });
-                case 2: return new GalleryItemType.Audio({content: FfiConverterTypeAudioMessageContent.read(from) });
-                case 3: return new GalleryItemType.Video({content: FfiConverterTypeVideoMessageContent.read(from) });
-                case 4: return new GalleryItemType.File({content: FfiConverterTypeFileMessageContent.read(from) });
-                case 5: return new GalleryItemType.Other({itemtype: FfiConverterString.read(from), body: FfiConverterString.read(from) });
-                default: throw new UniffiInternalError.UnexpectedEnumCase();
-            }
-        }
-        write(value: TypeName, into: RustBuffer): void {
-            switch (value.tag) {
-                case GalleryItemType_Tags.Image: {
-                    ordinalConverter.write(1, into);
-                    const inner = value.inner;
-                    FfiConverterTypeImageMessageContent.write(inner.content, into);
-                    return;
-                }
-                case GalleryItemType_Tags.Audio: {
-                    ordinalConverter.write(2, into);
-                    const inner = value.inner;
-                    FfiConverterTypeAudioMessageContent.write(inner.content, into);
-                    return;
-                }
-                case GalleryItemType_Tags.Video: {
-                    ordinalConverter.write(3, into);
-                    const inner = value.inner;
-                    FfiConverterTypeVideoMessageContent.write(inner.content, into);
-                    return;
-                }
-                case GalleryItemType_Tags.File: {
-                    ordinalConverter.write(4, into);
-                    const inner = value.inner;
-                    FfiConverterTypeFileMessageContent.write(inner.content, into);
-                    return;
-                }
-                case GalleryItemType_Tags.Other: {
-                    ordinalConverter.write(5, into);
-                    const inner = value.inner;
-                    FfiConverterString.write(inner.itemtype, into);
-                    FfiConverterString.write(inner.body, into);
-                    return;
-                }
-                default:
-                    // Throwing from here means that GalleryItemType_Tags hasn't matched an ordinal.
-                    throw new UniffiInternalError.UnexpectedEnumCase();
-            }
-        }
-        allocationSize(value: TypeName): number {
-            switch (value.tag) {
-                case GalleryItemType_Tags.Image: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(1);
-                    size += FfiConverterTypeImageMessageContent.allocationSize(inner.content);
-                    return size;
-                }
-                case GalleryItemType_Tags.Audio: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(2);
-                    size += FfiConverterTypeAudioMessageContent.allocationSize(inner.content);
-                    return size;
-                }
-                case GalleryItemType_Tags.Video: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(3);
-                    size += FfiConverterTypeVideoMessageContent.allocationSize(inner.content);
-                    return size;
-                }
-                case GalleryItemType_Tags.File: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(4);
-                    size += FfiConverterTypeFileMessageContent.allocationSize(inner.content);
-                    return size;
-                }
-                case GalleryItemType_Tags.Other: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(5);
-                    size += FfiConverterString.allocationSize(inner.itemtype);
-                    size += FfiConverterString.allocationSize(inner.body);
-                    return size;
-                }
-                default: throw new UniffiInternalError.UnexpectedEnumCase();
-            }
-        }
-    }
-    return new FFIConverter();
-})();
-
-
-
 // Enum: GeneratedQrLoginProgress
 export enum GeneratedQrLoginProgress_Tags {
     Starting = "Starting",
@@ -23332,7 +22577,6 @@ export enum MessageType_Tags {
     Audio = "Audio",
     Video = "Video",
     File = "File",
-    Gallery = "Gallery",
     Notice = "Notice",
     Text = "Text",
     Location = "Location",
@@ -23501,38 +22745,6 @@ export const MessageType = (() => {
     }
     
 
-    type Gallery__interface = {
-        tag: MessageType_Tags.Gallery;
-        inner: Readonly<{content: GalleryMessageContent}>
-    };
-
-    
-    class Gallery_ extends UniffiEnum implements Gallery__interface {
-        /**
-         * @private
-         * This field is private and should not be used, use `tag` instead.
-         */
-        readonly [uniffiTypeNameSymbol] = "MessageType";
-        readonly tag = MessageType_Tags.Gallery;
-        readonly inner: Readonly<{content: GalleryMessageContent}>;
-        constructor(inner: { content: GalleryMessageContent }) {
-            super("MessageType", "Gallery");
-            this.inner = Object.freeze(inner);
-        }
-
-        static new(inner: { content: GalleryMessageContent }): Gallery_ {
-            return new Gallery_(inner);
-        }
-
-        static instanceOf(obj: any): obj is Gallery_ {
-            return obj.tag === MessageType_Tags.Gallery;
-        }
-
-        
-
-    }
-    
-
     type Notice__interface = {
         tag: MessageType_Tags.Notice;
         inner: Readonly<{content: NoticeMessageContent}>
@@ -23671,7 +22883,6 @@ export const MessageType = (() => {
   Audio: Audio_, 
   Video: Video_, 
   File: File_, 
-  Gallery: Gallery_, 
   Notice: Notice_, 
   Text: Text_, 
   Location: Location_, 
@@ -23698,11 +22909,10 @@ const FfiConverterTypeMessageType = (() => {
                 case 3: return new MessageType.Audio({content: FfiConverterTypeAudioMessageContent.read(from) });
                 case 4: return new MessageType.Video({content: FfiConverterTypeVideoMessageContent.read(from) });
                 case 5: return new MessageType.File({content: FfiConverterTypeFileMessageContent.read(from) });
-                case 6: return new MessageType.Gallery({content: FfiConverterTypeGalleryMessageContent.read(from) });
-                case 7: return new MessageType.Notice({content: FfiConverterTypeNoticeMessageContent.read(from) });
-                case 8: return new MessageType.Text({content: FfiConverterTypeTextMessageContent.read(from) });
-                case 9: return new MessageType.Location({content: FfiConverterTypeLocationContent.read(from) });
-                case 10: return new MessageType.Other({msgtype: FfiConverterString.read(from), body: FfiConverterString.read(from) });
+                case 6: return new MessageType.Notice({content: FfiConverterTypeNoticeMessageContent.read(from) });
+                case 7: return new MessageType.Text({content: FfiConverterTypeTextMessageContent.read(from) });
+                case 8: return new MessageType.Location({content: FfiConverterTypeLocationContent.read(from) });
+                case 9: return new MessageType.Other({msgtype: FfiConverterString.read(from), body: FfiConverterString.read(from) });
                 default: throw new UniffiInternalError.UnexpectedEnumCase();
             }
         }
@@ -23738,32 +22948,26 @@ const FfiConverterTypeMessageType = (() => {
                     FfiConverterTypeFileMessageContent.write(inner.content, into);
                     return;
                 }
-                case MessageType_Tags.Gallery: {
-                    ordinalConverter.write(6, into);
-                    const inner = value.inner;
-                    FfiConverterTypeGalleryMessageContent.write(inner.content, into);
-                    return;
-                }
                 case MessageType_Tags.Notice: {
-                    ordinalConverter.write(7, into);
+                    ordinalConverter.write(6, into);
                     const inner = value.inner;
                     FfiConverterTypeNoticeMessageContent.write(inner.content, into);
                     return;
                 }
                 case MessageType_Tags.Text: {
-                    ordinalConverter.write(8, into);
+                    ordinalConverter.write(7, into);
                     const inner = value.inner;
                     FfiConverterTypeTextMessageContent.write(inner.content, into);
                     return;
                 }
                 case MessageType_Tags.Location: {
-                    ordinalConverter.write(9, into);
+                    ordinalConverter.write(8, into);
                     const inner = value.inner;
                     FfiConverterTypeLocationContent.write(inner.content, into);
                     return;
                 }
                 case MessageType_Tags.Other: {
-                    ordinalConverter.write(10, into);
+                    ordinalConverter.write(9, into);
                     const inner = value.inner;
                     FfiConverterString.write(inner.msgtype, into);
                     FfiConverterString.write(inner.body, into);
@@ -23806,33 +23010,27 @@ const FfiConverterTypeMessageType = (() => {
                     size += FfiConverterTypeFileMessageContent.allocationSize(inner.content);
                     return size;
                 }
-                case MessageType_Tags.Gallery: {
-                    const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(6);
-                    size += FfiConverterTypeGalleryMessageContent.allocationSize(inner.content);
-                    return size;
-                }
                 case MessageType_Tags.Notice: {
                     const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(7);
+                    let size = ordinalConverter.allocationSize(6);
                     size += FfiConverterTypeNoticeMessageContent.allocationSize(inner.content);
                     return size;
                 }
                 case MessageType_Tags.Text: {
                     const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(8);
+                    let size = ordinalConverter.allocationSize(7);
                     size += FfiConverterTypeTextMessageContent.allocationSize(inner.content);
                     return size;
                 }
                 case MessageType_Tags.Location: {
                     const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(9);
+                    let size = ordinalConverter.allocationSize(8);
                     size += FfiConverterTypeLocationContent.allocationSize(inner.content);
                     return size;
                 }
                 case MessageType_Tags.Other: {
                     const inner = value.inner;
-                    let size = ordinalConverter.allocationSize(10);
+                    let size = ordinalConverter.allocationSize(9);
                     size += FfiConverterString.allocationSize(inner.msgtype);
                     size += FfiConverterString.allocationSize(inner.body);
                     return size;
@@ -32464,7 +31662,6 @@ export enum RoomMessageEventMessageType {
     Audio,
     Emote,
     File,
-    Gallery,
     Image,
     Location,
     Notice,
@@ -32484,15 +31681,14 @@ const FfiConverterTypeRoomMessageEventMessageType = (() => {
                 case 1: return RoomMessageEventMessageType.Audio;
                 case 2: return RoomMessageEventMessageType.Emote;
                 case 3: return RoomMessageEventMessageType.File;
-                case 4: return RoomMessageEventMessageType.Gallery;
-                case 5: return RoomMessageEventMessageType.Image;
-                case 6: return RoomMessageEventMessageType.Location;
-                case 7: return RoomMessageEventMessageType.Notice;
-                case 8: return RoomMessageEventMessageType.ServerNotice;
-                case 9: return RoomMessageEventMessageType.Text;
-                case 10: return RoomMessageEventMessageType.Video;
-                case 11: return RoomMessageEventMessageType.VerificationRequest;
-                case 12: return RoomMessageEventMessageType.Other;
+                case 4: return RoomMessageEventMessageType.Image;
+                case 5: return RoomMessageEventMessageType.Location;
+                case 6: return RoomMessageEventMessageType.Notice;
+                case 7: return RoomMessageEventMessageType.ServerNotice;
+                case 8: return RoomMessageEventMessageType.Text;
+                case 9: return RoomMessageEventMessageType.Video;
+                case 10: return RoomMessageEventMessageType.VerificationRequest;
+                case 11: return RoomMessageEventMessageType.Other;
                 default: throw new UniffiInternalError.UnexpectedEnumCase();
             }
         }
@@ -32501,15 +31697,14 @@ const FfiConverterTypeRoomMessageEventMessageType = (() => {
                 case RoomMessageEventMessageType.Audio: return ordinalConverter.write(1, into);
                 case RoomMessageEventMessageType.Emote: return ordinalConverter.write(2, into);
                 case RoomMessageEventMessageType.File: return ordinalConverter.write(3, into);
-                case RoomMessageEventMessageType.Gallery: return ordinalConverter.write(4, into);
-                case RoomMessageEventMessageType.Image: return ordinalConverter.write(5, into);
-                case RoomMessageEventMessageType.Location: return ordinalConverter.write(6, into);
-                case RoomMessageEventMessageType.Notice: return ordinalConverter.write(7, into);
-                case RoomMessageEventMessageType.ServerNotice: return ordinalConverter.write(8, into);
-                case RoomMessageEventMessageType.Text: return ordinalConverter.write(9, into);
-                case RoomMessageEventMessageType.Video: return ordinalConverter.write(10, into);
-                case RoomMessageEventMessageType.VerificationRequest: return ordinalConverter.write(11, into);
-                case RoomMessageEventMessageType.Other: return ordinalConverter.write(12, into);
+                case RoomMessageEventMessageType.Image: return ordinalConverter.write(4, into);
+                case RoomMessageEventMessageType.Location: return ordinalConverter.write(5, into);
+                case RoomMessageEventMessageType.Notice: return ordinalConverter.write(6, into);
+                case RoomMessageEventMessageType.ServerNotice: return ordinalConverter.write(7, into);
+                case RoomMessageEventMessageType.Text: return ordinalConverter.write(8, into);
+                case RoomMessageEventMessageType.Video: return ordinalConverter.write(9, into);
+                case RoomMessageEventMessageType.VerificationRequest: return ordinalConverter.write(10, into);
+                case RoomMessageEventMessageType.Other: return ordinalConverter.write(11, into);
             }
         }
         allocationSize(value: TypeName): number {
@@ -39224,11 +38419,6 @@ export interface ClientInterface {
     accountData(eventType: string, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<string | undefined>;
     accountUrl(action: AccountManagementAction | undefined, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<string | undefined>;
     /**
-     * Adds a recently used emoji to the list and uploads the updated
-     * `io.element.recent_emoji` content to the global account data.
-     */
-    addRecentEmoji(emoji: string, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<void>;
-    /**
      * Find all sliding sync versions that are available.
      *
      * Be careful: This method may hit the store and will send new requests for
@@ -39357,11 +38547,6 @@ export interface ClientInterface {
     getMediaThumbnail(mediaSource: MediaSourceInterface, width: /*u64*/bigint, height: /*u64*/bigint, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<ArrayBuffer>;
     getNotificationSettings(asyncOpts_?: { signal: AbortSignal }) : Promise<NotificationSettingsInterface>;
     getProfile(userId: string, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<UserProfile>;
-    /**
-     * Gets the list of recently used emojis from the
-     * `io.element.recent_emoji` global account data.
-     */
-    getRecentEmojis(asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<Array<RecentEmoji>>;
     getRecentlyVisitedRooms(asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<Array<string>>;
     /**
      * Get a room by its ID.
@@ -39792,38 +38977,6 @@ async public accountUrl(action: AccountManagementAction | undefined, asyncOpts_?
             /*completeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_complete_rust_buffer,
             /*freeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_free_rust_buffer,
             /*liftFunc:*/ FfiConverterOptionalString.lift.bind(FfiConverterOptionalString),
-            /*liftString:*/ FfiConverterString.lift,
-            /*asyncOpts:*/ asyncOpts_,
-            /*errorHandler:*/ FfiConverterTypeClientError.lift.bind(FfiConverterTypeClientError)
-        );
-    } catch (__error: any) {
-        if (uniffiIsDebug && __error instanceof Error) {
-            __error.stack = __stack;
-        }
-        throw __error;
-    }
-    }
-    
-    /**
-     * Adds a recently used emoji to the list and uploads the updated
-     * `io.element.recent_emoji` content to the global account data.
-     */
-async public addRecentEmoji(emoji: string, asyncOpts_?: { signal: AbortSignal }): Promise<void> /*throws*/ {
-    const __stack = uniffiIsDebug ? new Error().stack : undefined;
-    try {
-        return await uniffiRustCallAsync(
-            /*rustCaller:*/ uniffiCaller,
-            /*rustFutureFunc:*/ () => {
-                return nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_method_client_add_recent_emoji(
-                    uniffiTypeClientObjectFactory.clonePointer(this),
-                    FfiConverterString.lower(emoji)
-                );
-            },
-            /*pollFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_poll_void,
-            /*cancelFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_cancel_void,
-            /*completeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_complete_void,
-            /*freeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_free_void,
-            /*liftFunc:*/ (_v) => {},
             /*liftString:*/ FfiConverterString.lift,
             /*asyncOpts:*/ asyncOpts_,
             /*errorHandler:*/ FfiConverterTypeClientError.lift.bind(FfiConverterTypeClientError)
@@ -40542,38 +39695,6 @@ async public getProfile(userId: string, asyncOpts_?: { signal: AbortSignal }): P
             /*completeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_complete_rust_buffer,
             /*freeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_free_rust_buffer,
             /*liftFunc:*/ FfiConverterTypeUserProfile.lift.bind(FfiConverterTypeUserProfile),
-            /*liftString:*/ FfiConverterString.lift,
-            /*asyncOpts:*/ asyncOpts_,
-            /*errorHandler:*/ FfiConverterTypeClientError.lift.bind(FfiConverterTypeClientError)
-        );
-    } catch (__error: any) {
-        if (uniffiIsDebug && __error instanceof Error) {
-            __error.stack = __stack;
-        }
-        throw __error;
-    }
-    }
-    
-    /**
-     * Gets the list of recently used emojis from the
-     * `io.element.recent_emoji` global account data.
-     */
-async public getRecentEmojis(asyncOpts_?: { signal: AbortSignal }): Promise<Array<RecentEmoji>> /*throws*/ {
-    const __stack = uniffiIsDebug ? new Error().stack : undefined;
-    try {
-        return await uniffiRustCallAsync(
-            /*rustCaller:*/ uniffiCaller,
-            /*rustFutureFunc:*/ () => {
-                return nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_method_client_get_recent_emojis(
-                    uniffiTypeClientObjectFactory.clonePointer(this)
-                    
-                );
-            },
-            /*pollFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_poll_rust_buffer,
-            /*cancelFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_cancel_rust_buffer,
-            /*completeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_complete_rust_buffer,
-            /*freeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_free_rust_buffer,
-            /*liftFunc:*/ FfiConverterArrayTypeRecentEmoji.lift.bind(FfiConverterArrayTypeRecentEmoji),
             /*liftString:*/ FfiConverterString.lift,
             /*asyncOpts:*/ asyncOpts_,
             /*errorHandler:*/ FfiConverterTypeClientError.lift.bind(FfiConverterTypeClientError)
@@ -52415,169 +51536,6 @@ const uniffiTypeSendAttachmentJoinHandleObjectFactory: UniffiObjectFactory<SendA
 const FfiConverterTypeSendAttachmentJoinHandle =  new FfiConverterObject(uniffiTypeSendAttachmentJoinHandleObjectFactory);
 
 
-export interface SendGalleryJoinHandleInterface {
-    
-    /**
-     * Cancel the current sending task.
-     *
-     * A subsequent call to [`Self::join`] will return immediately.
-     */
-    cancel() : void;
-    /**
-     * Wait until the gallery has been sent.
-     *
-     * If the sending had been cancelled, will return immediately.
-     */
-    join(asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<void>;
-}
-
-
-export class SendGalleryJoinHandle extends UniffiAbstractObject implements SendGalleryJoinHandleInterface {
-
-    readonly [uniffiTypeNameSymbol] = "SendGalleryJoinHandle";
-    readonly [destructorGuardSymbol]: UniffiRustArcPtr;
-    readonly [pointerLiteralSymbol]: UnsafeMutableRawPointer;
-    // No primary constructor declared for this class.
-private constructor(pointer: UnsafeMutableRawPointer) {
-    super();
-    this[pointerLiteralSymbol] = pointer;
-    this[destructorGuardSymbol] = uniffiTypeSendGalleryJoinHandleObjectFactory.bless(pointer);
-}
-
-    
-
-    
-    /**
-     * Cancel the current sending task.
-     *
-     * A subsequent call to [`Self::join`] will return immediately.
-     */
-public cancel(): void {uniffiCaller.rustCall(
-            /*caller:*/ (callStatus) => { nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_method_sendgalleryjoinhandle_cancel(uniffiTypeSendGalleryJoinHandleObjectFactory.clonePointer(this), 
-                callStatus);
-            },
-            /*liftString:*/ FfiConverterString.lift,
-    );
-    }
-    
-    /**
-     * Wait until the gallery has been sent.
-     *
-     * If the sending had been cancelled, will return immediately.
-     */
-async public join(asyncOpts_?: { signal: AbortSignal }): Promise<void> /*throws*/ {
-    const __stack = uniffiIsDebug ? new Error().stack : undefined;
-    try {
-        return await uniffiRustCallAsync(
-            /*rustCaller:*/ uniffiCaller,
-            /*rustFutureFunc:*/ () => {
-                return nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_method_sendgalleryjoinhandle_join(
-                    uniffiTypeSendGalleryJoinHandleObjectFactory.clonePointer(this)
-                    
-                );
-            },
-            /*pollFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_poll_void,
-            /*cancelFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_cancel_void,
-            /*completeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_complete_void,
-            /*freeFunc:*/ nativeModule().ubrn_ffi_matrix_sdk_ffi_rust_future_free_void,
-            /*liftFunc:*/ (_v) => {},
-            /*liftString:*/ FfiConverterString.lift,
-            /*asyncOpts:*/ asyncOpts_,
-            /*errorHandler:*/ FfiConverterTypeRoomError.lift.bind(FfiConverterTypeRoomError)
-        );
-    } catch (__error: any) {
-        if (uniffiIsDebug && __error instanceof Error) {
-            __error.stack = __stack;
-        }
-        throw __error;
-    }
-    }
-    
-
-    /**
-     * {@inheritDoc uniffi-bindgen-react-native#UniffiAbstractObject.uniffiDestroy}
-     */
-    uniffiDestroy(): void {
-        const ptr = (this as any)[destructorGuardSymbol];
-        if (ptr !== undefined) {
-            const pointer = uniffiTypeSendGalleryJoinHandleObjectFactory.pointer(this);
-            uniffiTypeSendGalleryJoinHandleObjectFactory.freePointer(pointer);
-            uniffiTypeSendGalleryJoinHandleObjectFactory.unbless(ptr);
-            delete (this as any)[destructorGuardSymbol];
-        }
-    }
-
-    static instanceOf(obj: any): obj is SendGalleryJoinHandle {
-        return uniffiTypeSendGalleryJoinHandleObjectFactory.isConcreteType(obj);
-    }
-
-    
-}
-
-const uniffiTypeSendGalleryJoinHandleObjectFactory: UniffiObjectFactory<SendGalleryJoinHandleInterface> = (() => {
-    
-    /// <reference lib="es2021" />
-    const registry = typeof FinalizationRegistry !== 'undefined' ? new FinalizationRegistry<UnsafeMutableRawPointer>((heldValue: UnsafeMutableRawPointer) => {
-        uniffiTypeSendGalleryJoinHandleObjectFactory.freePointer(heldValue);
-    }) : null;
-    
-    return {
-    create(pointer: UnsafeMutableRawPointer): SendGalleryJoinHandleInterface {
-        const instance = Object.create(SendGalleryJoinHandle.prototype);
-        instance[pointerLiteralSymbol] = pointer;
-        instance[destructorGuardSymbol] = this.bless(pointer);
-        instance[uniffiTypeNameSymbol] = "SendGalleryJoinHandle";
-        return instance;
-    },
-
-    
-    bless(p: UnsafeMutableRawPointer): UniffiRustArcPtr {
-        const ptr = {
-            p, // make sure this object doesn't get optimized away.
-            markDestroyed: () => undefined,
-        };
-        if (registry) {
-            registry.register(ptr, p, ptr);
-        }
-        return ptr;
-    },
-
-    unbless(ptr: UniffiRustArcPtr) {
-        if (registry) {
-            registry.unregister(ptr);
-        }
-    },
-
-    pointer(obj: SendGalleryJoinHandleInterface): UnsafeMutableRawPointer {
-        if ((obj as any)[destructorGuardSymbol] === undefined) {
-            throw new UniffiInternalError.UnexpectedNullPointer();
-        }
-        return (obj as any)[pointerLiteralSymbol];
-    },
-
-    clonePointer(obj: SendGalleryJoinHandleInterface): UnsafeMutableRawPointer {
-        const pointer = this.pointer(obj);
-        return uniffiCaller.rustCall(
-            /*caller:*/ (callStatus) => nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_clone_sendgalleryjoinhandle(pointer, callStatus),
-            /*liftString:*/ FfiConverterString.lift
-        );
-    },
-
-    freePointer(pointer: UnsafeMutableRawPointer): void {
-        uniffiCaller.rustCall(
-            /*caller:*/ (callStatus) => nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_free_sendgalleryjoinhandle(pointer, callStatus),
-            /*liftString:*/ FfiConverterString.lift
-        );
-    },
-
-    isConcreteType(obj: any): obj is SendGalleryJoinHandleInterface {
-        return obj[destructorGuardSymbol] && obj[uniffiTypeNameSymbol] === "SendGalleryJoinHandle";
-    },
-}})();
-// FfiConverter for SendGalleryJoinHandleInterface
-const FfiConverterTypeSendGalleryJoinHandle =  new FfiConverterObject(uniffiTypeSendGalleryJoinHandleObjectFactory);
-
-
 /**
  * A handle to perform actions onto a local echo.
  */
@@ -55141,7 +54099,6 @@ export interface TimelineInterface {
     send(msg: RoomMessageEventContentWithoutRelationInterface, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<SendHandleInterface>;
     sendAudio(params: UploadParameters, audioInfo: AudioInfo)  /*throws*/: SendAttachmentJoinHandleInterface;
     sendFile(params: UploadParameters, fileInfo: FileInfo)  /*throws*/: SendAttachmentJoinHandleInterface;
-    sendGallery(params: GalleryUploadParameters, itemInfos: Array<GalleryItemInfo>)  /*throws*/: SendGalleryJoinHandleInterface;
     sendImage(params: UploadParameters, thumbnailSource: UploadSource | undefined, imageInfo: ImageInfo)  /*throws*/: SendAttachmentJoinHandleInterface;
     sendLocation(body: string, geoUri: string, description: string | undefined, zoomLevel: /*u8*/number | undefined, assetType: AssetType | undefined, repliedToEventId: string | undefined, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<void>;
     sendPollResponse(pollStartEventId: string, answers: Array<string>, asyncOpts_?: { signal: AbortSignal })  /*throws*/: Promise<void>;
@@ -55733,20 +54690,6 @@ public sendFile(params: UploadParameters, fileInfo: FileInfo): SendAttachmentJoi
                 return nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_method_timeline_send_file(uniffiTypeTimelineObjectFactory.clonePointer(this), 
         FfiConverterTypeUploadParameters.lower(params),
         FfiConverterTypeFileInfo.lower(fileInfo),
-                callStatus);
-            },
-            /*liftString:*/ FfiConverterString.lift,
-    ));
-    }
-    
-public sendGallery(params: GalleryUploadParameters, itemInfos: Array<GalleryItemInfo>): SendGalleryJoinHandleInterface /*throws*/ {
-    return FfiConverterTypeSendGalleryJoinHandle.lift(
-        uniffiCaller.rustCallWithError(
-            /*liftError:*/ FfiConverterTypeRoomError.lift.bind(FfiConverterTypeRoomError),
-            /*caller:*/ (callStatus) => {
-                return nativeModule().ubrn_uniffi_matrix_sdk_ffi_fn_method_timeline_send_gallery(uniffiTypeTimelineObjectFactory.clonePointer(this), 
-        FfiConverterTypeGalleryUploadParameters.lower(params),
-        FfiConverterArrayTypeGalleryItemInfo.lower(itemInfos),
                 callStatus);
             },
             /*liftString:*/ FfiConverterString.lift,
@@ -57546,10 +56489,6 @@ const FfiConverterArrayTypeReaction = new FfiConverterArray(FfiConverterTypeReac
 const FfiConverterArrayTypeReactionSenderData = new FfiConverterArray(FfiConverterTypeReactionSenderData);
 
 
-// FfiConverter for Array<RecentEmoji>
-const FfiConverterArrayTypeRecentEmoji = new FfiConverterArray(FfiConverterTypeRecentEmoji);
-
-
 // FfiConverter for Array<RoomDescription>
 const FfiConverterArrayTypeRoomDescription = new FfiConverterArray(FfiConverterTypeRoomDescription);
 
@@ -57750,14 +56689,6 @@ const FfiConverterArrayTypeDraftAttachment = new FfiConverterArray(FfiConverterT
 const FfiConverterArrayTypeFilterTimelineEventType = new FfiConverterArray(FfiConverterTypeFilterTimelineEventType);
 
 
-// FfiConverter for Array<GalleryItemInfo>
-const FfiConverterArrayTypeGalleryItemInfo = new FfiConverterArray(FfiConverterTypeGalleryItemInfo);
-
-
-// FfiConverter for Array<GalleryItemType>
-const FfiConverterArrayTypeGalleryItemType = new FfiConverterArray(FfiConverterTypeGalleryItemType);
-
-
 // FfiConverter for Array<Membership>
 const FfiConverterArrayTypeMembership = new FfiConverterArray(FfiConverterTypeMembership);
 
@@ -57922,9 +56853,6 @@ function uniffiEnsureInitialized() {
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_client_account_url() !== 42373) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_client_account_url");
     }
-    if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_client_add_recent_emoji() !== 29688) {
-        throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_client_add_recent_emoji");
-    }
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_client_available_sliding_sync_versions() !== 35296) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_client_available_sliding_sync_versions");
     }
@@ -57999,9 +56927,6 @@ function uniffiEnsureInitialized() {
     }
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_client_get_profile() !== 60062) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_client_get_profile");
-    }
-    if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_client_get_recent_emojis() !== 43545) {
-        throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_client_get_recent_emojis");
     }
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_client_get_recently_visited_rooms() !== 22399) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_client_get_recently_visited_rooms");
@@ -58939,12 +57864,6 @@ function uniffiEnsureInitialized() {
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_sendattachmentjoinhandle_join() !== 1903) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_sendattachmentjoinhandle_join");
     }
-    if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_sendgalleryjoinhandle_cancel() !== 7014) {
-        throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_sendgalleryjoinhandle_cancel");
-    }
-    if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_sendgalleryjoinhandle_join() !== 57901) {
-        throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_sendgalleryjoinhandle_join");
-    }
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_sendhandle_abort() !== 11570) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_sendhandle_abort");
     }
@@ -59139,9 +58058,6 @@ function uniffiEnsureInitialized() {
     }
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_timeline_send_file() !== 4740) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_timeline_send_file");
-    }
-    if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_timeline_send_gallery() !== 61071) {
-        throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_timeline_send_gallery");
     }
     if (nativeModule().ubrn_uniffi_matrix_sdk_ffi_checksum_method_timeline_send_image() !== 29043) {
         throw new UniffiInternalError.ApiChecksumMismatch("uniffi_matrix_sdk_ffi_checksum_method_timeline_send_image");
@@ -59505,10 +58421,6 @@ export default Object.freeze({
     FfiConverterTypeFilterTimelineEventType,
     FfiConverterTypeFocusEventError,
     FfiConverterTypeFormattedBody,
-    FfiConverterTypeGalleryItemInfo,
-    FfiConverterTypeGalleryItemType,
-    FfiConverterTypeGalleryMessageContent,
-    FfiConverterTypeGalleryUploadParameters,
     FfiConverterTypeGeneratedQrLoginProgress,
     FfiConverterTypeGrantGeneratedQrLoginProgress,
     FfiConverterTypeGrantLoginWithQrCodeHandler,
@@ -59599,7 +58511,6 @@ export default Object.freeze({
     FfiConverterTypeReactionSenderData,
     FfiConverterTypeReceipt,
     FfiConverterTypeReceiptType,
-    FfiConverterTypeRecentEmoji,
     FfiConverterTypeRecoveryError,
     FfiConverterTypeRecoveryState,
     FfiConverterTypeRequestConfig,
@@ -59649,7 +58560,6 @@ export default Object.freeze({
     FfiConverterTypeSecretStorageEncryptionAlgorithm,
     FfiConverterTypeSecretStorageV1AesHmacSha2Properties,
     FfiConverterTypeSendAttachmentJoinHandle,
-    FfiConverterTypeSendGalleryJoinHandle,
     FfiConverterTypeSendHandle,
     FfiConverterTypeSession,
     FfiConverterTypeSessionVerificationController,
