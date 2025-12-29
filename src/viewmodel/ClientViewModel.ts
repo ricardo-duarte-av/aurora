@@ -81,6 +81,21 @@ export class ClientViewModel
         });
     }
 
+    /**
+     * Safely fetch avatar URL, handling cases where the server returns null
+     * instead of omitting the field (which causes deserialization errors)
+     */
+    private async getAvatarUrlSafely(): Promise<string | undefined> {
+        if (!this.client) return undefined;
+
+        try {
+            return await this.client.avatarUrl();
+        } catch (e) {
+            console.log("No avatar URL available for user");
+            return undefined;
+        }
+    }
+
     private async registerServiceWorker() {
         const registration = await navigator.serviceWorker.register("sw.js");
         if (!registration) {
@@ -202,7 +217,7 @@ export class ClientViewModel
 
             const userId = this.client.userId();
             const displayName = await this.client.displayName();
-            const avatarUrl = await this.client.avatarUrl();
+            const avatarUrl = await this.getAvatarUrlSafely();
 
             console.log("Session restored");
 
@@ -341,7 +356,7 @@ export class ClientViewModel
         }
         const userId = this.client.userId();
         const displayName = await this.client.displayName();
-        const avatarUrl = await this.client.avatarUrl();
+        const avatarUrl = await this.getAvatarUrlSafely();
 
         // Create encryption view model now that we have a client
         const encryptionViewModel = new EncryptionViewModel({
