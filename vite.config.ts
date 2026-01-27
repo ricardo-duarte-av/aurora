@@ -1,6 +1,10 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
@@ -8,6 +12,15 @@ export default defineConfig(async () => ({
 
     define: {
         "process.env": {},
+    },
+
+    resolve: {
+        alias: {
+            "@element-hq/web-shared-components/src": resolve(
+                __dirname,
+                "node_modules/@element-hq/web-shared-components/src",
+            ),
+        },
     },
 
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
