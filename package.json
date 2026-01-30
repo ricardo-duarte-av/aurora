@@ -34,7 +34,7 @@
         "uniffi-bindgen-react-native": "git+https://github.com/jhugman/uniffi-bindgen-react-native#5c01f3f7025d069aac1dd1fd51ca72bb76fdb243"
     },
     "devDependencies": {
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "2.0.6",
         "@tauri-apps/cli": "^1.5.8",
         "@types/lodash-es": "^4.17.12",
         "@types/react": "^19.0.0",
