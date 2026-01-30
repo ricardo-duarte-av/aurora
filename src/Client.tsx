@@ -5,10 +5,10 @@ import { useViewModel } from "@element-hq/web-shared-components";
 import { Composer } from "./Composer.tsx";
 import MemberListView from "./MemberList/MemberListView.tsx";
 import { RoomHeaderView } from "./RoomHeaderView";
+import { RoomListSearch } from "./RoomList";
 import { RoomListFiltersView } from "./RoomListFiltersView";
 import { RoomListHeaderView } from "./RoomListHeaderView";
 import { RoomListView } from "./RoomListView";
-import { RoomSearchView } from "./RoomSearchView";
 import { RoomView } from "./RoomView";
 import { SidePanelView } from "./SidePanelView.tsx";
 import { SplashView } from "./SplashView.tsx";
@@ -47,7 +47,7 @@ export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
                     />
                 </nav>
                 <nav className="mx_RoomList">
-                    <RoomSearchView />
+                    <RoomListSearch />
                     {
                         <>
                             <RoomListHeaderView />
