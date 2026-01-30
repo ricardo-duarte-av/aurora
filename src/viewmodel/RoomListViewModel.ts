@@ -141,7 +141,10 @@ export class RoomListViewModel
         visibleRooms: RoomSummary[];
         groupCounts: number[];
     } {
-        const visibleSections: Array<{ section: RoomSection; originalIndex: number }> = [];
+        const visibleSections: Array<{
+            section: RoomSection;
+            originalIndex: number;
+        }> = [];
         const visibleRooms: RoomSummary[] = [];
         const groupCounts: number[] = [];
 

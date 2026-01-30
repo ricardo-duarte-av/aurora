@@ -38,7 +38,9 @@ export function ResetIdentityPasswordScreen({
             <div className={styles.content}>
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.passwordSection}>
-                        <label htmlFor="password" className={styles.label}>Password</label>
+                        <label htmlFor="password" className={styles.label}>
+                            Password
+                        </label>
                         <input
                             id="password"
                             type="password"
@@ -52,7 +54,9 @@ export function ResetIdentityPasswordScreen({
                         />
                     </div>
 
-                    {error && <div className={styles.errorMessage}>{error}</div>}
+                    {error && (
+                        <div className={styles.errorMessage}>{error}</div>
+                    )}
 
                     <div className={styles.buttonGroup}>
                         <button

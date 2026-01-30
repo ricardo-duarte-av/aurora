@@ -36,11 +36,7 @@ export const RecoveryKeyEntryScreen: React.FC<RecoveryKeyEntryScreenProps> = ({
 
     return (
         <div className={styles.container}>
-            {error && (
-                <div className={styles.error}>
-                    {error}
-                </div>
-            )}
+            {error && <div className={styles.error}>{error}</div>}
 
             <Form.Root onSubmit={handleRecover}>
                 <Form.Field name="recoveryKey">
