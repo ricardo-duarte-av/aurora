@@ -25,8 +25,14 @@ export function RoomListView({
     vm,
     onRoomSelected,
 }: RoomListViewProps): JSX.Element {
-    const { rooms, visibleSections, visibleRooms, groupCounts, currentRoomId, loading } =
-        useViewModel(vm);
+    const {
+        rooms,
+        visibleSections,
+        visibleRooms,
+        groupCounts,
+        currentRoomId,
+        loading,
+    } = useViewModel(vm);
 
     // Show centered spinner while waiting for room list to load
     if (loading) {

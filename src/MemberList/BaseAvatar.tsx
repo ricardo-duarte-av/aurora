@@ -51,7 +51,10 @@ const calculateUrls = (
 const useImageUrl = ({
     url,
     urls,
-}: { url?: string | null; urls?: string[] }): [string, () => void] => {
+}: {
+    url?: string | null;
+    urls?: string[];
+}): [string, () => void] => {
     // Since this is a hot code path and the settings store can be slow, we
     // use the cached lowBandwidth value from the room context if it exists
     // const roomContext = useScopedRoomContext("lowBandwidth");

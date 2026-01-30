@@ -60,7 +60,10 @@ const MemberListView: React.FC<IProps> = (props: IProps) => {
     const rowRenderer = ({
         index,
         data,
-    }: { index: number; data: MemberWithSeparator }): JSX.Element => {
+    }: {
+        index: number;
+        data: MemberWithSeparator;
+    }): JSX.Element => {
         if (index === memberCount) {
             // We've rendered all the members,
             // now we render an empty div to add some space to the end of the list.

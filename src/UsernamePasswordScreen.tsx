@@ -7,9 +7,9 @@ export interface UsernamePasswordScreenProps {
     loginViewModel: LoginViewModel;
 }
 
-export const UsernamePasswordScreen: React.FC<
-    UsernamePasswordScreenProps
-> = ({ loginViewModel }) => {
+export const UsernamePasswordScreen: React.FC<UsernamePasswordScreenProps> = ({
+    loginViewModel,
+}) => {
     const { server, username, password, canSubmit, loggingIn, error } =
         useViewModel(loginViewModel);
 
