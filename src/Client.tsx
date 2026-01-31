@@ -1,19 +1,13 @@
 import type React from "react";
-import { useEffect } from "react";
 import "./App.css";
 import { useViewModel } from "@element-hq/web-shared-components";
-import { Composer } from "./Composer.tsx";
-import MemberListView from "./MemberList/MemberListView.tsx";
-import { RoomHeaderView } from "./RoomHeaderView";
-import { RoomListSearch } from "./RoomList";
+import { useClientStoreContext } from "./context/ClientStoreContext";
+import { RoomListHeader, RoomListSearch } from "./RoomList";
 import { RoomListFiltersView } from "./RoomListFiltersView";
-import { RoomListHeaderView } from "./RoomListHeaderView";
 import { RoomListView } from "./RoomListView";
 import { RoomView } from "./RoomView";
 import { SidePanelView } from "./SidePanelView.tsx";
 import { SplashView } from "./SplashView.tsx";
-import { Timeline } from "./Timeline.tsx";
-import { useClientStoreContext } from "./context/ClientStoreContext";
 
 console.log("running Client.tsx");
 
@@ -50,7 +44,7 @@ export const Client: React.FC<ClientProps> = ({ onAddAccount }) => {
                     <RoomListSearch />
                     {
                         <>
-                            <RoomListHeaderView />
+                            <RoomListHeader />
                             <RoomListFiltersView vm={roomListViewModel} />
                             <RoomListView
                                 vm={roomListViewModel}
