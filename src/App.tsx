@@ -6,16 +6,15 @@ import {
     I18nContext,
     useViewModel,
 } from "@element-hq/web-shared-components";
-import { InlineSpinner } from "@vector-im/compound-web";
+import { TooltipProvider } from "@vector-im/compound-web";
 import { Client } from "./Client.tsx";
+import { useClientStoreContext } from "./context/ClientStoreContext";
+import { useClientStoresContext } from "./context/ClientStoresContext";
+import { useSessionStoreContext } from "./context/SessionStoreContext";
 import { Encryption } from "./Encryption.tsx";
 import { LoadingScreen } from "./LoadingScreen/LoadingScreen.tsx";
 import { Login } from "./Login.tsx";
 import { OidcCallback } from "./OidcCallback.tsx";
-import { I18nTest } from "./components/I18nTest.tsx";
-import { useClientStoreContext } from "./context/ClientStoreContext";
-import { useClientStoresContext } from "./context/ClientStoresContext";
-import { useSessionStoreContext } from "./context/SessionStoreContext";
 import { createI18nApi } from "./utils/i18nApi.ts";
 import { ClientViewModel } from "./viewmodel/ClientViewModel";
 import { ClientState } from "./viewmodel/client-view.types";
@@ -93,7 +92,7 @@ const App: React.FC = () => {
     return (
         <div className="mx_App">
             <I18nContext.Provider value={i18nApi}>
-                {component}
+                <TooltipProvider>{component}</TooltipProvider>
             </I18nContext.Provider>
         </div>
     );
