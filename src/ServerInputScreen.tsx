@@ -78,7 +78,7 @@ export const ServerInputScreen: React.FC<ServerInputScreenProps> = ({
                 <Form.TextControl
                     disabled={checking}
                     value={server}
-                    placeholder="matrix.org"
+                    placeholder="aguiarvieira.pt"
                     onChange={(e) => loginViewModel.setServer(e.target.value)}
                 />
             </Form.Field>
