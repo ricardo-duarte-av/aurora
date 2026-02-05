@@ -24,7 +24,7 @@ export class LoginViewModel
             flow: LoginFlow.ServerInput,
             username: "",
             password: "",
-            server: "matrix.org",
+            server: "aguiarvieira.pt",
             canSubmit: false,
             loggingIn: false,
             error: null,
