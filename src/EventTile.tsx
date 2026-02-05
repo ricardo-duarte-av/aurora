@@ -24,7 +24,7 @@ function mxcToUrl(mxcUrl: string, size = 48): string {
     return (
         mxcUrl.replace(
             /^mxc:\/\//,
-            "https://matrix.org/_matrix/media/v3/thumbnail/",
+            "https://aguiarvieira.pt/_matrix/media/v3/thumbnail/",
         ) + `?width=${size}&height=${size}`
     );
 }
