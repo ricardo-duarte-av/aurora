@@ -1,0 +1,24 @@
+ersion: '3.8'
+
+services:
+  aurora:
+    build: .
+    #ports:
+    #  - "5173:5173"
+    volumes:
+    #  - .:/app  # Optional: mounts current dir into the container for live development
+      - /app/node_modules  # Prevent node_modules from being overwritten
+    command: sh -c "yarn && yarn dev --host 0.0.0.0"
+    networks:
+      - npm-nw6
+      - npm-nw
+
+
+networks:
+  npm-nw6:
+    external: true
+    enable_ipv6: false
+  npm-nw:
+    external: true
+    enable_ipv6: false
+
