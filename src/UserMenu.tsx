@@ -27,7 +27,7 @@ import type { ClientViewModel } from "./viewmodel/ClientViewModel";
 function mxcToUrl(mxcUrl: string): string {
     return `${mxcUrl.replace(
         /^mxc:\/\//,
-        "https://matrix.org/_matrix/media/v3/thumbnail/",
+        "https://aguiarvieira.pt/_matrix/media/v3/thumbnail/",
     )}?width=48&height=48`;
 }
 
